@@ -216,48 +216,70 @@ void world_draw_3d(World *w, Vec3 player_pos, int stage) {
     }
 
     // ========== 2. FLOOR SYSTEM ==========
-    float step = 45.0f;
+    float step = 60.0f;
     float cx = floorf(player_pos.x / step) * step;
     float cz = floorf(player_pos.z / step) * step;
-    int gh = 60;
-    float gs = gh * step;
+    int render_range = 24; // High-detail view distance around player
 
-    // SOLID DARK GROUND SURFACE
-    {
-        float ph = gs + step;
-        float tile = step * 4.0f;
-        int tc = (int)(ph / tile) + 1;
-        for (int ti = -tc; ti < tc; ti++) {
-            for (int tj = -tc; tj < tc; tj++) {
-                float tx = cx + ti * tile;
-                float tz = cz + tj * tile;
-                Vector3 q1 = {tx,        -0.15f, tz};
-                Vector3 q2 = {tx + tile, -0.15f, tz};
-                Vector3 q3 = {tx + tile, -0.15f, tz + tile};
-                Vector3 q4 = {tx,        -0.15f, tz + tile};
-                DrawTriangle3D(q1, q2, q3, (Color){4, 3, 12, 255});
-                DrawTriangle3D(q1, q3, q4, (Color){4, 3, 12, 255});
+    // SOLID DARK GLASS PANELS WITH CHAMFERED EDGES
+    for (int ti = -render_range; ti <= render_range; ti++) {
+        for (int tj = -render_range; tj <= render_range; tj++) {
+            float tx = cx + ti * step;
+            float tz = cz + tj * step;
+            float dist_sq = (tx - player_pos.x) * (tx - player_pos.x) + (tz - player_pos.z) * (tz - player_pos.z);
+            if (dist_sq > 1800.0f * 1800.0f) continue; // Distance cull
+
+            float margin = 2.0f; // Gap between tiles for glowing energy seams
+            float x1 = tx + margin;
+            float x2 = tx + step - margin;
+            float z1 = tz + margin;
+            float z2 = tz + step - margin;
+
+            // Subtle procedural panel color variance based on tile coordinates
+            int pattern = (int)(fabsf(sinf(ti * 12.9898f + tj * 78.233f)) * 4.0f);
+            Color panel_col;
+            if (pattern == 0)      panel_col = (Color){ 8, 10, 24, 245 };
+            else if (pattern == 1) panel_col = (Color){ 4, 14, 28, 245 };
+            else if (pattern == 2) panel_col = (Color){12,  8, 30, 245 };
+            else                   panel_col = (Color){ 6, 12, 20, 245 };
+
+            Vector3 q1 = {x1, -0.10f, z1};
+            Vector3 q2 = {x2, -0.10f, z1};
+            Vector3 q3 = {x2, -0.10f, z2};
+            Vector3 q4 = {x1, -0.10f, z2};
+            DrawTriangle3D(q1, q2, q3, panel_col);
+            DrawTriangle3D(q1, q3, q4, panel_col);
+
+            // Inner tech circuit trace inside alternate tiles
+            if (pattern == 1 || pattern == 3) {
+                float ix1 = tx + step * 0.25f;
+                float ix2 = tx + step * 0.75f;
+                float iz1 = tz + step * 0.25f;
+                float iz2 = tz + step * 0.75f;
+                Color trace_col = sub_grid_col; trace_col.a = 60;
+                DrawLine3D((Vector3){ix1, 0.05f, iz1}, (Vector3){ix2, 0.05f, iz1}, trace_col);
+                DrawLine3D((Vector3){ix2, 0.05f, iz1}, (Vector3){ix2, 0.05f, iz2}, trace_col);
+            }
+
+            // Glowing Tile Seams (Double-layered neon bloom)
+            Color seam_col = ((ti + tj) % 4 == 0) ? main_grid_col : sub_grid_col;
+            seam_col.a = 180;
+            DrawLine3D((Vector3){x1, 0.1f, z1}, (Vector3){x2, 0.1f, z1}, seam_col);
+            DrawLine3D((Vector3){x1, 0.1f, z1}, (Vector3){x1, 0.1f, z2}, seam_col);
+
+            // Glowing Cyber-Nodes at Tile Intersections
+            if ((ti + tj) % 2 == 0) {
+                Vector3 node_pos = (Vector3){tx, 0.2f, tz};
+                float pulse = 0.5f + 0.5f * sinf(t * 3.0f + (ti + tj) * 0.5f);
+                Color node_col = main_grid_col;
+                node_col.a = (unsigned char)(140 + 115 * pulse);
+                DrawSphereWires(node_pos, 2.5f + pulse * 1.5f, 6, 6, node_col);
             }
         }
     }
 
-    // NEON GLASS GRID LINES (with stage theme colors)
-    for (int i = -gh; i <= gh; i++) {
-        float p = cx + i * step;
-        bool major = (((int)(p / step + 10000)) % 4 == 0);
-        Color lc = major ? main_grid_col : sub_grid_col;
-        DrawLine3D((Vector3){p, 0.0f, cz - gs}, (Vector3){p, 0.0f, cz + gs}, lc);
-    }
-    for (int j = -gh; j <= gh; j++) {
-        float p = cz + j * step;
-        bool major = (((int)(p / step + 10000)) % 4 == 0);
-        Color lc = major ? main_grid_col : sub_grid_col;
-        DrawLine3D((Vector3){cx - gs, 0.0f, p}, (Vector3){cx + gs, 0.0f, p}, lc);
-    }
-
     // Outer Edge Black Hole Event Boundary (Giant vortex wall at stage boundary)
     float stage_max_r = 2500.0f + stage * 1500.0f;
-    Vector3 center_pos = {0.0f, 0.0f, 0.0f};
     for (int h = 0; h < 6; h++) {
         Vector3 hp = {0.0f, h * 12.0f, 0.0f};
         DrawCylinderWires(hp, stage_max_r, stage_max_r, 10.0f, 64, (h % 2 == 0) ? (Color){255, 0, 150, 240} : (Color){0, 240, 255, 220});
@@ -270,13 +292,13 @@ void world_draw_3d(World *w, Vec3 player_pos, int stage) {
         DrawLine3D(bp1, bp2, (Color){255, 215, 0, 230});
     }
 
-    // Subtle floor energy pulse rings
+    // Dynamic floor energy pulse rings expanding from player
     for (int r = 0; r < 5; r++) {
-        float pr = fmodf(t * 40.0f + r * 80.0f, 400.0f);
-        unsigned char pa = (unsigned char)(180.0f * (1.0f - pr / 400.0f));
-        Vector3 fp = (Vector3){player_pos.x, 0.2f, player_pos.z};
+        float pr = fmodf(t * 45.0f + r * 90.0f, 450.0f);
+        unsigned char pa = (unsigned char)(190.0f * (1.0f - pr / 450.0f));
+        Vector3 fp = (Vector3){player_pos.x, 0.25f, player_pos.z};
         Color pr_col = main_grid_col; pr_col.a = pa;
-        DrawCylinderWires(fp, pr, pr, 0.3f, 24, pr_col);
+        DrawCylinderWires(fp, pr, pr, 0.4f, 28, pr_col);
     }
 
     // ========== 3. WORLD OBJECTS ==========
