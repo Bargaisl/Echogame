@@ -168,116 +168,50 @@ void world_draw_3d(World *w, Vec3 player_pos, int stage) {
     }
 
     // ========== 1. BLACK HOLE SINGULARITY (follows player, always visible below) ==========
-    Vector3 bh = (Vector3){player_pos.x, -150.0f, player_pos.z};
-    float bhr = 70.0f;
+    Vector3 bh = (Vector3){player_pos.x, -160.0f, player_pos.z};
+    float bhr = 80.0f;
 
-    // Event horizon core (pitch black sphere)
+    // Event horizon core (pitch black solid sphere)
     DrawSphere(bh, bhr, BLACK);
 
-    // Photon ring
-    DrawCylinderWires(bh, bhr + 5.0f, bhr + 5.0f, 3.0f, 36, bh_photon_col1);
-    DrawCylinderWires(bh, bhr + 10.0f + sinf(t * 4.5f) * 3.0f, bhr + 10.0f + sinf(t * 4.5f) * 3.0f, 4.0f, 36, bh_photon_col2);
+    // Photon ring (solid translucent glow)
+    DrawCylinder(bh, bhr + 6.0f, bhr + 6.0f, 4.0f, 36, bh_photon_col1);
+    DrawCylinder(bh, bhr + 12.0f, bhr + 12.0f, 4.0f, 36, bh_photon_col2);
 
-    // Accretion disc
-    for (int r = 0; r < 20; r++) {
-        float ring_r = (bhr + 18.0f) + r * 60.0f;
-        float height = 6.0f + r * 1.0f;
-        float wobble = sinf(t * 2.0f + r * 0.7f) * 5.0f;
+    // Accretion disc (solid translucent plasma rings — NO wireframe lines!)
+    for (int r = 0; r < 14; r++) {
+        float ring_r = (bhr + 20.0f) + r * 75.0f;
+        float height = 5.0f + r * 1.5f;
+        float wobble = sinf(t * 1.8f + r * 0.6f) * 4.0f;
 
         Color rc = bh_disc_cols[r % 4];
-        rc.a = (unsigned char)(245 - r * 8);
+        rc.a = (unsigned char)(160 - r * 9); // Translucent plasma glow
 
         Vector3 rp = (Vector3){bh.x, bh.y + wobble, bh.z};
-        DrawCylinderWires(rp, ring_r, ring_r, height, 40, rc);
+        DrawCylinder(rp, ring_r, ring_r, height, 36, rc);
     }
 
-    // Curved spiral wisps
-    for (int i = 0; i < 56; i++) {
-        float ba = (i / 56.0f) * TAU;
-        float sa = ba + t * 0.3f;
-        float ir = bhr + 12.0f;
-        float or2 = 380.0f + sinf(t * 2.5f + i) * 140.0f;
-        float ca = sa + 0.35f;
+    // ========== 2. FLOOR SYSTEM (Semi-Transparent Tinted Obsidian Glass) ==========
+    // SOLID TINTED GLASS PLANE — 100% CLEAN (NO GRID LINES / NO WIREFRAMES!)
+    float floor_size = 4000.0f;
+    float fx = player_pos.x;
+    float fz = player_pos.z;
 
-        Vector3 ws = (Vector3){
-            bh.x + cosf(sa) * ir,
-            bh.y + sinf(t * 3.0f + i * 0.4f) * 4.0f,
-            bh.z + sinf(sa) * ir
-        };
-        Vector3 we = (Vector3){
-            bh.x + cosf(ca) * or2,
-            bh.y + sinf(t * 1.5f + i) * 14.0f,
-            bh.z + sinf(ca) * or2
-        };
+    Vector3 g1 = {fx - floor_size, -0.10f, fz - floor_size};
+    Vector3 g2 = {fx + floor_size, -0.10f, fz - floor_size};
+    Vector3 g3 = {fx + floor_size, -0.10f, fz + floor_size};
+    Vector3 g4 = {fx - floor_size, -0.10f, fz + floor_size};
 
-        Color wc = bh_disc_cols[i % 4];
-        wc.a = (unsigned char)(160 - (i % 4) * 20);
-        DrawLine3D(ws, we, wc);
-    }
+    // Dark tinted glass color: semi-transparent so the Black Hole below is clearly visible!
+    Color glass_col = (Color){ 8, 12, 28, 150 };
+    DrawTriangle3D(g1, g2, g3, glass_col);
+    DrawTriangle3D(g1, g3, g4, glass_col);
 
-    // ========== 2. FLOOR SYSTEM ==========
-    float step = 45.0f;
-    float cx = floorf(player_pos.x / step) * step;
-    float cz = floorf(player_pos.z / step) * step;
-    int gh = 60;
-    float gs = gh * step;
-
-    // SOLID DARK GROUND SURFACE
-    {
-        float ph = gs + step;
-        float tile = step * 4.0f;
-        int tc = (int)(ph / tile) + 1;
-        for (int ti = -tc; ti < tc; ti++) {
-            for (int tj = -tc; tj < tc; tj++) {
-                float tx = cx + ti * tile;
-                float tz = cz + tj * tile;
-                Vector3 q1 = {tx,        -0.15f, tz};
-                Vector3 q2 = {tx + tile, -0.15f, tz};
-                Vector3 q3 = {tx + tile, -0.15f, tz + tile};
-                Vector3 q4 = {tx,        -0.15f, tz + tile};
-                DrawTriangle3D(q1, q2, q3, (Color){4, 3, 12, 255});
-                DrawTriangle3D(q1, q3, q4, (Color){4, 3, 12, 255});
-            }
-        }
-    }
-
-    // NEON GLASS GRID LINES (with stage theme colors)
-    for (int i = -gh; i <= gh; i++) {
-        float p = cx + i * step;
-        bool major = (((int)(p / step + 10000)) % 4 == 0);
-        Color lc = major ? main_grid_col : sub_grid_col;
-        DrawLine3D((Vector3){p, 0.0f, cz - gs}, (Vector3){p, 0.0f, cz + gs}, lc);
-    }
-    for (int j = -gh; j <= gh; j++) {
-        float p = cz + j * step;
-        bool major = (((int)(p / step + 10000)) % 4 == 0);
-        Color lc = major ? main_grid_col : sub_grid_col;
-        DrawLine3D((Vector3){cx - gs, 0.0f, p}, (Vector3){cx + gs, 0.0f, p}, lc);
-    }
-
-    // Outer Edge Black Hole Event Boundary (Giant vortex wall at stage boundary)
+    // Outer Edge Stage Boundary Wall (Smooth translucent cylinder)
     float stage_max_r = 2500.0f + stage * 1500.0f;
-    Vector3 center_pos = {0.0f, 0.0f, 0.0f};
-    for (int h = 0; h < 6; h++) {
-        Vector3 hp = {0.0f, h * 12.0f, 0.0f};
-        DrawCylinderWires(hp, stage_max_r, stage_max_r, 10.0f, 64, (h % 2 == 0) ? (Color){255, 0, 150, 240} : (Color){0, 240, 255, 220});
-    }
-    // Vertical boundary pillars
-    for (int b = 0; b < 32; b++) {
-        float ba = (b / 32.0f) * TAU + t * 0.2f;
-        Vector3 bp1 = {cosf(ba) * stage_max_r, 0.0f, sinf(ba) * stage_max_r};
-        Vector3 bp2 = {cosf(ba) * stage_max_r, 120.0f, sinf(ba) * stage_max_r};
-        DrawLine3D(bp1, bp2, (Color){255, 215, 0, 230});
-    }
-
-    // Subtle floor energy pulse rings
-    for (int r = 0; r < 5; r++) {
-        float pr = fmodf(t * 40.0f + r * 80.0f, 400.0f);
-        unsigned char pa = (unsigned char)(180.0f * (1.0f - pr / 400.0f));
-        Vector3 fp = (Vector3){player_pos.x, 0.2f, player_pos.z};
-        Color pr_col = main_grid_col; pr_col.a = pa;
-        DrawCylinderWires(fp, pr, pr, 0.3f, 24, pr_col);
-    }
+    Vector3 wall_p = {0.0f, 0.0f, 0.0f};
+    Color wall_c = main_grid_col; wall_c.a = 90;
+    DrawCylinder(wall_p, stage_max_r, stage_max_r, 60.0f, 48, wall_c);
 
     // ========== 3. WORLD OBJECTS ==========
     for (int i = 0; i < w->count; i++) {
