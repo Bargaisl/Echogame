@@ -652,6 +652,8 @@ void game_update(GameState *g, float dt) {
     }
 
     Vec3 move_vec = vec3_add(vec3_scale(move, speed * dt), vec3_scale(monster_pushback, dt));
+    move_vec.y = 0.0f; // HORIZONTAL MOVEMENT ONLY — prevent Y accumulator from launching player into the sky!
+
     // Outer Edge Black Hole Boundary — Initiate portal transition when reaching the edge
     float stage_max_r = 2500.0f + g->world_stage * 1500.0f;
     float dist_from_center = sqrtf(g->player.pos.x * g->player.pos.x + g->player.pos.z * g->player.pos.z);
@@ -671,6 +673,7 @@ void game_update(GameState *g, float dt) {
         // Force pull towards portal after 0.5s
         if (g->pull_timer >= 0.5f) {
             Vec3 dir = vec3_normalize(vec3_sub(g->world.portal_pos, g->player.pos));
+            dir.y = 0.0f;
             float pull_speed = 200.0f;
             g->player.pos = vec3_add(g->player.pos, vec3_scale(dir, pull_speed * dt));
         }
@@ -704,6 +707,7 @@ void game_update(GameState *g, float dt) {
     }
 
     g->player.pos = vec3_add(g->player.pos, move_vec);
+    g->player.pos.y = 10.0f; // Firmly lock player height at ground level!
 
     g->camera.position = (Vector3){g->player.pos.x, g->player.pos.y, g->player.pos.z};
     g->camera.target = (Vector3){

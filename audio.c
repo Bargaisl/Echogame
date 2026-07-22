@@ -56,6 +56,9 @@ static void audio_stream_callback(void *buffer, unsigned int frames) {
 
     for (unsigned int i = 0; i < frames; i++) {
         g_audio_engine->time_accumulator += dt_sample;
+        if (g_audio_engine->time_accumulator >= 3600.0f) {
+            g_audio_engine->time_accumulator = fmodf(g_audio_engine->time_accumulator, 3600.0f);
+        }
         float t = g_audio_engine->time_accumulator;
         float sample_l = 0.0f;
         float sample_r = 0.0f;
