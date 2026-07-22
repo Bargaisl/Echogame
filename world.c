@@ -167,53 +167,86 @@ void world_draw_3d(World *w, Vec3 player_pos, int stage) {
         bh_disc_cols[2] = (Color){255, 100, 200, 255}; bh_disc_cols[3] = (Color){255, 200, 230, 255};
     }
 
-    // ========== 1. CRISP INTERSTELLAR GARGANTUA SINGULARITY ==========
-    Vector3 bh = (Vector3){player_pos.x, -160.0f, player_pos.z};
+    // ========== 1. CRISP INTERSTELLAR GARGANTUA SINGULARITY (Underneath at Y = -180) ==========
+    Vector3 bh = (Vector3){player_pos.x, -180.0f, player_pos.z};
     float bhr = 80.0f;
 
-    // 1. Pitch-black crisp Event Horizon Core
+    // Pitch-black crisp Event Horizon Core
     DrawSphere(bh, bhr, BLACK);
 
-    // 2. Razor-sharp white-hot Photon Ring
-    DrawCylinder(bh, bhr + 3.0f, bhr + 3.0f, 3.0f, 64, WHITE);
-    DrawCylinder(bh, bhr + 8.0f, bhr + 8.0f, 2.0f, 64, (Color){255, 220, 100, 255});
+    // Razor-sharp white-hot Photon Ring
+    DrawCylinderWires(bh, bhr + 4.0f, bhr + 4.0f, 3.0f, 36, WHITE);
+    DrawCylinderWires(bh, bhr + 10.0f, bhr + 10.0f, 2.0f, 36, (Color){255, 220, 100, 255});
 
-    // 3. High-Contrast Gargantua Accretion Disc (Sharp, distinct plasma rings — NO MUD!)
-    // Inner Hot Ring (Golden White)
-    DrawCylinder((Vector3){bh.x, bh.y + sinf(t * 2.0f) * 2.0f, bh.z}, bhr + 18.0f, bhr + 110.0f, 6.0f, 64, (Color){255, 230, 150, 240});
-    // Mid Plasma Ring (Vibrant Neon Magenta / Cyan depending on stage theme)
-    DrawCylinder((Vector3){bh.x, bh.y + sinf(t * 1.5f + 1.0f) * 3.0f, bh.z}, bhr + 120.0f, bhr + 340.0f, 8.0f, 64, bh_photon_col1);
-    // Outer Deep Void Ring (Cosmic Violet)
-    DrawCylinder((Vector3){bh.x, bh.y + sinf(t * 1.0f + 2.0f) * 4.0f, bh.z}, bhr + 360.0f, bhr + 750.0f, 10.0f, 64, bh_photon_col2);
+    // High-Contrast Gargantua Accretion Disc (Clean concentric plasma rings)
+    for (int r = 0; r < 10; r++) {
+        float ring_r = (bhr + 20.0f) + r * 60.0f;
+        float height = 4.0f;
+        float wobble = sinf(t * 1.5f + r * 0.5f) * 3.0f;
 
-    // 4. Gravitational Lensing Halo (Interstellar Light Bending arcs top & bottom)
-    Vector3 top_arc = (Vector3){bh.x, bh.y + 45.0f, bh.z};
-    Vector3 bot_arc = (Vector3){bh.x, bh.y - 45.0f, bh.z};
-    Color lens_col = (Color){255, 200, 255, 140};
-    DrawCylinder(top_arc, bhr + 140.0f, bhr + 20.0f, 25.0f, 48, lens_col);
-    DrawCylinder(bot_arc, bhr + 20.0f, bhr + 140.0f, 25.0f, 48, lens_col);
+        Color rc = bh_disc_cols[r % 4];
+        rc.a = (unsigned char)(200 - r * 15);
 
-    // ========== 2. FLOOR SYSTEM (Option 1: Tinted Obsidian Glass) ==========
-    // 100% CLEAN GLASS MONOLITH (NO GRID LINES / NO WIREFRAMES / PERFECT CLARITY)
-    float floor_size = 4500.0f;
-    float fx = player_pos.x;
-    float fz = player_pos.z;
+        Vector3 rp = (Vector3){bh.x, bh.y + wobble, bh.z};
+        DrawCylinderWires(rp, ring_r, ring_r, height, 36, rc);
+    }
 
-    Vector3 g1 = {fx - floor_size, -0.10f, fz - floor_size};
-    Vector3 g2 = {fx + floor_size, -0.10f, fz - floor_size};
-    Vector3 g3 = {fx + floor_size, -0.10f, fz + floor_size};
-    Vector3 g4 = {fx - floor_size, -0.10f, fz + floor_size};
+    // ========== 2. FLOOR SYSTEM (Clean Grid Lines & Semi-Transparent Glass) ==========
+    float step = 60.0f;
+    float cx = floorf(player_pos.x / step) * step;
+    float cz = floorf(player_pos.z / step) * step;
+    int gh = 45;
+    float gs = gh * step;
 
-    // Dark tinted glass floor: clear enough that Gargantua below is 100% sharp & visible!
-    Color glass_col = (Color){ 6, 10, 24, 130 };
-    DrawTriangle3D(g1, g2, g3, glass_col);
-    DrawTriangle3D(g1, g3, g4, glass_col);
+    // Dark semi-transparent ground surface
+    {
+        float ph = gs + step;
+        float tile = step * 4.0f;
+        int tc = (int)(ph / tile) + 1;
+        for (int ti = -tc; ti < tc; ti++) {
+            for (int tj = -tc; tj < tc; tj++) {
+                float tx = cx + ti * tile;
+                float tz = cz + tj * tile;
+                Vector3 q1 = {tx,        -0.10f, tz};
+                Vector3 q2 = {tx + tile, -0.10f, tz};
+                Vector3 q3 = {tx + tile, -0.10f, tz + tile};
+                Vector3 q4 = {tx,        -0.10f, tz + tile};
+                DrawTriangle3D(q1, q2, q3, (Color){6, 8, 24, 200});
+                DrawTriangle3D(q1, q3, q4, (Color){6, 8, 24, 200});
+            }
+        }
+    }
 
-    // Smooth Outer Arena Boundary Wall
+    // CRISP FLOOR GRID LINES (Clear spatial orientation — NO floating in air!)
+    for (int i = -gh; i <= gh; i++) {
+        float p = cx + i * step;
+        bool major = (((int)(p / step + 10000)) % 4 == 0);
+        Color lc = major ? main_grid_col : sub_grid_col;
+        DrawLine3D((Vector3){p, 0.0f, cz - gs}, (Vector3){p, 0.0f, cz + gs}, lc);
+    }
+    for (int j = -gh; j <= gh; j++) {
+        float p = cz + j * step;
+        bool major = (((int)(p / step + 10000)) % 4 == 0);
+        Color lc = major ? main_grid_col : sub_grid_col;
+        DrawLine3D((Vector3){cx - gs, 0.0f, p}, (Vector3){cx + gs, 0.0f, p}, lc);
+    }
+
+    // ========== 3. OUTER STAGE BOUNDARY (Clearly Visible Boundary & Beacon Pillars) ==========
     float stage_max_r = 2500.0f + stage * 1500.0f;
-    Vector3 wall_p = {0.0f, 0.0f, 0.0f};
-    Color wall_c = main_grid_col; wall_c.a = 80;
-    DrawCylinder(wall_p, stage_max_r, stage_max_r, 70.0f, 48, wall_c);
+
+    // Glowing boundary rings at floor level
+    for (int h = 0; h < 4; h++) {
+        Vector3 hp = {0.0f, h * 15.0f, 0.0f};
+        Color ring_c = (h % 2 == 0) ? (Color){255, 0, 170, 255} : (Color){0, 240, 255, 255};
+        DrawCylinderWires(hp, stage_max_r, stage_max_r, 8.0f, 64, ring_c);
+    }
+    // High-visibility vertical boundary beacon pillars
+    for (int b = 0; b < 32; b++) {
+        float ba = (b / 32.0f) * TAU + t * 0.2f;
+        Vector3 bp1 = {cosf(ba) * stage_max_r, 0.0f, sinf(ba) * stage_max_r};
+        Vector3 bp2 = {cosf(ba) * stage_max_r, 160.0f, sinf(ba) * stage_max_r};
+        DrawLine3D(bp1, bp2, (Color){255, 215, 0, 245});
+    }
 
     // ========== 3. WORLD OBJECTS ==========
     for (int i = 0; i < w->count; i++) {
