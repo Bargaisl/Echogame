@@ -1508,60 +1508,68 @@ void game_draw(GameState *g, Shader bg_shader, Shader echo_shader, Shader post_s
         DrawCylinderWires(mc, 35.0f, 35.0f, 0.5f, 16, (Color){0, 240, 255, 200});
     }
     if (g->player.skill_levels[8] > 0) {
-        Vector3 ez = (Vector3){g->player.pos.x, 8.0f, g->player.pos.z};
-        DrawSphereWires(ez, 40.0f + sinf(t*15)*4, 12, 12, (Color){0, 240, 255, 220});
+        Vector3 ez = (Vector3){g->player.pos.x, 0.4f, g->player.pos.z};
+        float ez_r = 40.0f + sinf(t*15.0f)*4.0f;
+        Color ez_col = (Color){0, 240, 255, 180};
+        DrawCylinder(ez, ez_r, ez_r, 0.4f, 28, ez_col);
     }
     if (g->player.skill_levels[9] > 0) {
-        Vector3 sh = (Vector3){g->player.pos.x + sinf(t*4)*16, 10.0f, g->player.pos.z + cosf(t*4)*16};
-        DrawSphereWires(sh, 8.0f, 8, 8, (Color){0, 255, 200, 220});
+        Vector3 sh = (Vector3){g->player.pos.x + sinf(t*4.0f)*16.0f, 10.0f, g->player.pos.z + cosf(t*4.0f)*16.0f};
+        DrawSphere(sh, 6.0f, (Color){0, 255, 200, 230});
     }
     if (g->decoy.active) {
         Vector3 dp = (Vector3){g->decoy.pos.x, g->decoy.pos.y, g->decoy.pos.z};
         DrawSphere(dp, 4.0f, (Color){255, 215, 0, 255});
-        if (g->decoy.pulse_intensity > 0.05f)
-            DrawSphereWires(dp, g->decoy.pulse_radius, 14, 14, (Color){255, 215, 0, (unsigned char)(220 * g->decoy.pulse_intensity)});
+        if (g->decoy.pulse_intensity > 0.05f) {
+            Vector3 dp_f = (Vector3){dp.x, 0.3f, dp.z};
+            Color d_col = (Color){255, 215, 0, (unsigned char)(200 * g->decoy.pulse_intensity)};
+            DrawCylinder(dp_f, g->decoy.pulse_radius, g->decoy.pulse_radius, 0.4f, 24, d_col);
+        }
     }
     if (g->player.pulse_active && g->player.pulse_intensity > 0.05f) {
-        Vector3 o3 = (Vector3){g->player.pulse_origin.x, g->player.pulse_origin.y, g->player.pulse_origin.z};
-        DrawSphereWires(o3, g->player.pulse_radius, 16, 16, (Color){0, 240, 255, (unsigned char)(220 * g->player.pulse_intensity)});
+        Vector3 o3 = (Vector3){g->player.pulse_origin.x, 0.3f, g->player.pulse_origin.z};
+        Color p_col = (Color){0, 240, 255, (unsigned char)(200 * g->player.pulse_intensity)};
+        DrawCylinder(o3, g->player.pulse_radius, g->player.pulse_radius, 0.4f, 28, p_col);
     }
 
     particles_draw_3d(&g->particles);
 
-    // 3D Enemy Models
+    // 3D Enemy Models (Solid 3D entities — NO wireframe spheres enclosing the screen!)
     for (int i = 0; i < MAX_ENEMIES; i++) {
         Enemy *e = &g->enemies[i];
         if (!e->active) continue;
-        Vector3 center = (Vector3){e->pos.x, e->pos.y + sinf(t*3+i)*1.5f, e->pos.z};
+        Vector3 center = (Vector3){e->pos.x, e->pos.y + sinf(t*3.0f+i)*1.5f, e->pos.z};
         float r = e->radius_scale;
 
         if (e->monster_level == 3) {
-            DrawSphere(center, r, BLACK);
-            DrawSphereWires(center, r + 4.0f, 16, 16, (Color){255, 0, 170, 255});
-            DrawCylinderWires(center, r*1.6f, r*1.6f, 2.0f, 24, (Color){255, 215, 0, 255});
-            DrawCylinderWires(center, r*2.2f, r*2.2f, 1.0f, 28, (Color){0, 240, 255, 200});
-            Vector3 bt = (Vector3){center.x, center.y+140, center.z};
-            Vector3 bb = (Vector3){center.x, center.y-140, center.z};
-            DrawLine3D(bb, bt, (Color){255, 0, 170, 220});
-            DrawLine3D((Vector3){center.x+4, center.y-120, center.z}, (Vector3){center.x-4, center.y+120, center.z}, (Color){0, 240, 255, 255});
+            // Boss Monster: Solid dark core + glowing magenta/cyan aura
+            DrawSphere(center, r, (Color){15, 5, 25, 255});
+            DrawSphere(center, r * 0.7f, (Color){255, 0, 170, 240});
+            DrawSphere(center, r * 0.4f, (Color){0, 240, 255, 255});
+            // Orbiting plasma rings
+            Vector3 pr1 = (Vector3){center.x, center.y + sinf(t*4.0f)*2.0f, center.z};
+            DrawCylinder(pr1, r * 1.5f, r * 1.5f, 2.0f, 24, (Color){255, 215, 0, 200});
         } else if (e->monster_level == 2) {
+            // Level 2 Mutant: Solid crimson body + tentacles
             DrawSphere(center, r, (Color){255, 0, 40, 255});
-            DrawSphereWires(center, r+3, 10, 10, (Color){0, 240, 255, 200});
-            for (int k = 0; k < 10; k++) {
-                float ta = (k/10.0f)*TAU + t*4;
-                Vector3 tip = (Vector3){ center.x+cosf(ta)*(r+18+sinf(t*10+k)*6), center.y+sinf(t*8+k)*8, center.z+sinf(ta)*(r+18+sinf(t*10+k)*6) };
-                DrawLine3D(center, tip, BLACK); DrawSphere(tip, 3.0f, (Color){255, 0, 170, 255});
+            DrawSphere(center, r * 0.5f, (Color){255, 120, 0, 255});
+            for (int k = 0; k < 8; k++) {
+                float ta = (k/8.0f)*TAU + t*4.0f;
+                Vector3 tip = (Vector3){ center.x+cosf(ta)*(r+16.0f+sinf(t*10.0f+k)*5.0f), center.y+sinf(t*8.0f+k)*6.0f, center.z+sinf(ta)*(r+16.0f+sinf(t*10.0f+k)*5.0f) };
+                DrawLine3D(center, tip, (Color){180, 0, 30, 255});
+                DrawSphere(tip, 2.5f, (Color){255, 0, 170, 255});
             }
             Vector3 e1 = (Vector3){center.x-r*0.3f, center.y+r*0.3f, center.z+r*0.7f};
             Vector3 e2 = (Vector3){center.x+r*0.3f, center.y+r*0.3f, center.z+r*0.7f};
             DrawSphere(e1, 3.0f, (Color){0, 240, 255, 255}); DrawSphere(e2, 3.0f, (Color){0, 240, 255, 255});
         } else {
-            DrawSphere(center, r, BLACK);
-            DrawSphereWires(center, r+2.5f, 6, 6, (Color){255, 0, 170, 220});
-            for (int k = 0; k < 8; k++) {
-                float ta = (k/8.0f)*TAU + t*5;
-                Vector3 tip = (Vector3){ center.x+cosf(ta)*(r+12+sinf(t*6+k)*5), center.y+sinf(t*6+k)*5, center.z+sinf(ta)*(r+12+sinf(t*6+k)*5) };
-                DrawLine3D(center, tip, BLACK); DrawSphere(tip, 2.0f, (Color){255, 0, 170, 255});
+            // Level 1 Stalker: Pitch black void core + tentacles + red glowing eyes
+            DrawSphere(center, r, (Color){10, 10, 15, 255});
+            for (int k = 0; k < 6; k++) {
+                float ta = (k/6.0f)*TAU + t*5.0f;
+                Vector3 tip = (Vector3){ center.x+cosf(ta)*(r+10.0f+sinf(t*6.0f+k)*4.0f), center.y+sinf(t*6.0f+k)*4.0f, center.z+sinf(ta)*(r+12.0f+sinf(t*6.0f+k)*4.0f) };
+                DrawLine3D(center, tip, (Color){20, 20, 30, 255});
+                DrawSphere(tip, 2.0f, (Color){255, 0, 170, 255});
             }
             Vector3 e1 = (Vector3){center.x-r*0.3f, center.y+r*0.3f, center.z+r*0.7f};
             Vector3 e2 = (Vector3){center.x+r*0.3f, center.y+r*0.3f, center.z+r*0.7f};
