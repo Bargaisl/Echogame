@@ -182,7 +182,13 @@ typedef struct {
     int levelup_cards[3];
     int unlocked_artifact_idx;
     int world_stage;   // Current stage/level (1, 2, 3, ...)
-    int max_stage;     // High score max stage reached
+    int max_stage;                 // High score max stage reached
+    float stage_radius;            // Current arena radius
+    float stage_timer;             // Time elapsed in current stage
+    bool transitioning;            // True while portal animation runs
+    float transition_progress;     // 0.0‑1.0 portal animation progress
+    bool player_frozen;            // True while player movement is disabled
+    float pull_timer;              // Timer for forced pull after 0.5 s
 
     Player player;
     Enemy enemies[MAX_ENEMIES];

@@ -224,7 +224,11 @@ void game_reset(GameState *g) {
     g->total_kills = 0;
     g->screen_shake = 0.0f;
     g->distortion_level = 0.0f;
-
+    // Initialize portal transition state
+    g->transitioning = false;
+    g->player_frozen = false;
+    g->transition_progress = 0.0f;
+    g->pull_timer = -1.0f;
     g->player.pos = (Vec3){0.0f, 10.0f, 0.0f};
     g->player.vel = (Vec3){0.0f, 0.0f, 0.0f};
     g->player.yaw = 0.0f;
@@ -629,7 +633,7 @@ void game_update(GameState *g, float dt) {
                 Vec3 push_dir = vec3_normalize(vec3_sub(g->player.pos, e->pos));
                 if (e->monster_level == 3) {
                     total_monster_drag *= 0.45f;
-                    monster_pushback = vec3_add(monster_pushback, vec3_scale(push_dir, -30.0f));
+                    monster_pushback = vec3_add(monster_pushback, vec3_scale(push_dir, 30.0f));
                 } else if (e->monster_level == 2) {
                     total_monster_drag *= 0.70f;
                     monster_pushback = vec3_add(monster_pushback, vec3_scale(push_dir, 25.0f));
@@ -648,26 +652,55 @@ void game_update(GameState *g, float dt) {
     }
 
     Vec3 move_vec = vec3_add(vec3_scale(move, speed * dt), vec3_scale(monster_pushback, dt));
-    // Outer Edge Black Hole Boundary — Reaching the edge sucks player into the next level!
+    // Outer Edge Black Hole Boundary — Initiate portal transition when reaching the edge
     float stage_max_r = 2500.0f + g->world_stage * 1500.0f;
     float dist_from_center = sqrtf(g->player.pos.x * g->player.pos.x + g->player.pos.z * g->player.pos.z);
-    if (dist_from_center >= stage_max_r) {
-        // Transition to Next Level when reaching the outer edge vortex
-        g->world_stage++;
-        if (g->world_stage > g->max_stage) g->max_stage = g->world_stage;
-        
-        g->player.pos = (Vec3){0.0f, 10.0f, 0.0f};
-        g->player.crystals_collected = 0;
-        g->player.silence_charge = 100.0f;
-        g->survival_timer = 0.0f;
-        g->screen_shake = 1.5f;
-        g->distortion_level = 1.0f;
-        
-        world_init(&g->world, 9999 + g->world_stage * 13, g->world_stage);
-        
+    if (!g->transitioning && dist_from_center >= stage_max_r) {
+        g->transitioning = true;
+        g->transition_progress = 0.0f;
+        g->player_frozen = true;
+        g->pull_timer = 0.0f;
         audio_play_sfx(&g->audio, SFX_PORTAL_WIN, 1.0f);
-        particles_burst_3d(&g->particles, (Vec3){0, 10.0f, 0}, (Color){255, 0, 200, 255}, 250, 300.0f, 800.0f, 5.0f, 10.0f, 2.5f);
-        particles_burst_3d(&g->particles, (Vec3){0, 10.0f, 0}, (Color){0, 240, 255, 255}, 150, 200.0f, 600.0f, 3.0f, 8.0f, 2.0f);
+    }
+
+    if (g->transitioning) {
+        // Update transition progress (2 seconds total)
+        g->transition_progress += dt / 2.0f;
+        g->pull_timer += dt;
+
+        // Force pull towards portal after 0.5s
+        if (g->pull_timer >= 0.5f) {
+            Vec3 dir = vec3_normalize(vec3_sub(g->world.portal_pos, g->player.pos));
+            float pull_speed = 200.0f;
+            g->player.pos = vec3_add(g->player.pos, vec3_scale(dir, pull_speed * dt));
+        }
+
+        // Freeze regular movement during portal transition
+        move_vec = (Vec3){0.0f, 0.0f, 0.0f};
+
+        if (g->transition_progress >= 1.0f) {
+            g->world_stage++;
+            if (g->world_stage > g->max_stage) g->max_stage = g->world_stage;
+
+            // Restore health on stage clear
+            g->player.health = g->player.max_health;
+
+            g->player.pos = (Vec3){0.0f, 10.0f, 0.0f};
+            g->player.crystals_collected = 0;
+            g->player.silence_charge = 100.0f;
+            g->survival_timer = 0.0f;
+            g->screen_shake = 1.5f;
+            g->distortion_level = 1.0f;
+
+            world_init(&g->world, 9999 + g->world_stage * 13, g->world_stage);
+
+            particles_burst_3d(&g->particles, (Vec3){0, 10.0f, 0}, (Color){255, 0, 200, 255}, 250, 300.0f, 800.0f, 5.0f, 10.0f, 2.5f);
+            particles_burst_3d(&g->particles, (Vec3){0, 10.0f, 0}, (Color){0, 240, 255, 255}, 150, 200.0f, 600.0f, 3.0f, 8.0f, 2.0f);
+
+            g->transitioning = false;
+            g->player_frozen = false;
+            g->pull_timer = -1.0f;
+        }
     }
 
     g->player.pos = vec3_add(g->player.pos, move_vec);
@@ -1183,7 +1216,7 @@ void game_draw(GameState *g, Shader bg_shader, Shader echo_shader, Shader post_s
         const char *title = "E C H O";
         draw_text_bitmap(title, center_x(title, 0, 1280, 6), 140, 6, (Color){0, 240, 255, 255});
 
-        const char *sub = "MAGIC SURVIVAL 3D HORDE";
+        const char *sub = "COSMIC SURVIVAL 3D HORDE";
         draw_text_bitmap(sub, center_x(sub, 0, 1280, 2), 230, 2, (Color){255, 215, 0, 220});
 
         // START button
@@ -1330,7 +1363,7 @@ void game_draw(GameState *g, Shader bg_shader, Shader echo_shader, Shader post_s
 
         DrawRectangle(100, 130, 320, 36, (Color){20, 25, 55, 250});
         DrawRectangleLines(100, 130, 320, 36, tab0_c);
-        const char *t0 = "[1] 16 MAGIC SPELLS";
+        const char *t0 = "[1] 16 COSMIC SPELLS";
         draw_text_bitmap(t0, center_x(t0, 100, 320, 2), center_y(130, 36, 2), 2, tab0_c);
 
         DrawRectangle(480, 130, 320, 36, (Color){20, 25, 55, 250});
@@ -1391,7 +1424,7 @@ void game_draw(GameState *g, Shader bg_shader, Shader echo_shader, Shader post_s
             draw_text_bitmap("Use Echolocation Pulse to reveal hidden Mana Orbs and Treasure Chests.", 130, 265, 1, (Color){0, 240, 255, 255});
             draw_text_bitmap("GAME OBJECTIVES:", 130, 310, 2, (Color){0, 255, 200, 255});
             draw_text_bitmap("1. SURVIVE: Kill monsters for Blue (+15) and Yellow (+50) Mana.", 130, 340, 1, WHITE);
-            draw_text_bitmap("2. LEVEL UP: Choose from 16 Magic Spells each level up.", 130, 365, 1, WHITE);
+            draw_text_bitmap("2. LEVEL UP: Choose from 16 Cosmic Spells each level up.", 130, 365, 1, WHITE);
             draw_text_bitmap("3. CHESTS: Find chests via Echo Pulse -> unlock 5 Artifacts.", 130, 390, 1, (Color){255, 215, 0, 255});
             draw_text_bitmap("4. PORTAL: Collect 5 Golden Crystals to WIN!", 130, 415, 1, (Color){255, 0, 170, 255});
             draw_text_bitmap("CONTROLS:", 130, 460, 2, (Color){255, 0, 170, 255});

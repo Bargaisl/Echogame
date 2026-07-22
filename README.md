@@ -1,4 +1,5 @@
-# ECHO — Magic Survival 3D Horde
+# ECHO — Cosmic Survival 3D Horde
+Эта игра создана для 1.44MB Game Jam 2026
 
 > **Version:** Jam Build  
 > **File size:** ~608 KB (compressed) | Limit: 1 474 560 bytes  
@@ -236,7 +237,7 @@ Every time your Mana XP bar fills, you level up and choose 1 of 3 random upgrade
 ---
 ---
 
-# ECHO — Магическое выживание 3D Орда
+# ECHO — Космическое выживание 3D Орда
 
 > **Версия:** Jam-билд  
 > **Размер файла:** ~608 КБ (сжатый) | Лимит: 1 474 560 байт  
