@@ -593,8 +593,8 @@ void game_update(GameState *g, float dt) {
     Vec3 move = {0.0f, 0.0f, 0.0f};
     if (IsKeyDown(KEY_W) || IsKeyDown(KEY_UP)) move = vec3_add(move, forward);
     if (IsKeyDown(KEY_S) || IsKeyDown(KEY_DOWN)) move = vec3_sub(move, forward);
-    if (IsKeyDown(KEY_D) || IsKeyDown(KEY_RIGHT)) move = vec3_add(move, right);
-    if (IsKeyDown(KEY_A) || IsKeyDown(KEY_LEFT)) move = vec3_sub(move, right);
+    if (IsKeyDown(KEY_D) || IsKeyDown(KEY_RIGHT)) move = vec3_sub(move, right);
+    if (IsKeyDown(KEY_A) || IsKeyDown(KEY_LEFT)) move = vec3_add(move, right);
 
     move = vec3_normalize(move);
     float move_multiplier = 1.0f + g->player.skill_levels[14] * 0.15f;
