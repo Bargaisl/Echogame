@@ -167,116 +167,53 @@ void world_draw_3d(World *w, Vec3 player_pos, int stage) {
         bh_disc_cols[2] = (Color){255, 100, 200, 255}; bh_disc_cols[3] = (Color){255, 200, 230, 255};
     }
 
-    // ========== 1. BLACK HOLE SINGULARITY & INTERSTELLAR ACCRETION DISC ==========
-    Vector3 bh = (Vector3){player_pos.x, -170.0f, player_pos.z};
-    float bhr = 85.0f;
+    // ========== 1. CRISP INTERSTELLAR GARGANTUA SINGULARITY ==========
+    Vector3 bh = (Vector3){player_pos.x, -160.0f, player_pos.z};
+    float bhr = 80.0f;
 
-    // Pitch-black singularity core
-    DrawSphere(bh, bhr, (Color){ 2, 2, 6, 255 });
+    // 1. Pitch-black crisp Event Horizon Core
+    DrawSphere(bh, bhr, BLACK);
 
-    // White-hot photon sphere halo
-    DrawCylinder(bh, bhr + 4.0f, bhr + 4.0f, 6.0f, 48, (Color){255, 255, 255, 240});
-    DrawCylinder(bh, bhr + 12.0f, bhr + 12.0f, 4.0f, 48, bh_photon_col1);
+    // 2. Razor-sharp white-hot Photon Ring
+    DrawCylinder(bh, bhr + 3.0f, bhr + 3.0f, 3.0f, 64, WHITE);
+    DrawCylinder(bh, bhr + 8.0f, bhr + 8.0f, 2.0f, 64, (Color){255, 220, 100, 255});
 
-    // DENSE VOLUMETRIC PLASMA ACCRETION DISC (Interstellar Style: Continuous smooth gradient)
-    int disc_layers = 28;
-    for (int r = 0; r < disc_layers; r++) {
-        float norm = (float)r / (float)disc_layers;
-        float ring_r = (bhr + 16.0f) + norm * 950.0f;
-        float height = 4.0f + norm * 24.0f;
-        float wobble = sinf(t * 1.5f + norm * 4.0f) * 6.0f;
+    // 3. High-Contrast Gargantua Accretion Disc (Sharp, distinct plasma rings — NO MUD!)
+    // Inner Hot Ring (Golden White)
+    DrawCylinder((Vector3){bh.x, bh.y + sinf(t * 2.0f) * 2.0f, bh.z}, bhr + 18.0f, bhr + 110.0f, 6.0f, 64, (Color){255, 230, 150, 240});
+    // Mid Plasma Ring (Vibrant Neon Magenta / Cyan depending on stage theme)
+    DrawCylinder((Vector3){bh.x, bh.y + sinf(t * 1.5f + 1.0f) * 3.0f, bh.z}, bhr + 120.0f, bhr + 340.0f, 8.0f, 64, bh_photon_col1);
+    // Outer Deep Void Ring (Cosmic Violet)
+    DrawCylinder((Vector3){bh.x, bh.y + sinf(t * 1.0f + 2.0f) * 4.0f, bh.z}, bhr + 360.0f, bhr + 750.0f, 10.0f, 64, bh_photon_col2);
 
-        // Smooth volumetric gradient blending from hot inner core to deep outer plasma tail
-        Color plasma_col;
-        if (norm < 0.20f) {
-            plasma_col = (Color){255, 230, 255, (unsigned char)(230 - norm * 400)};
-        } else if (norm < 0.60f) {
-            plasma_col = bh_disc_cols[(r % 2) + 1];
-            plasma_col.a = (unsigned char)(180 * (1.0f - (norm - 0.2f) / 0.4f));
-        } else {
-            plasma_col = bh_disc_cols[r % 4];
-            plasma_col.a = (unsigned char)(90 * (1.0f - (norm - 0.6f) / 0.4f));
-        }
+    // 4. Gravitational Lensing Halo (Interstellar Light Bending arcs top & bottom)
+    Vector3 top_arc = (Vector3){bh.x, bh.y + 45.0f, bh.z};
+    Vector3 bot_arc = (Vector3){bh.x, bh.y - 45.0f, bh.z};
+    Color lens_col = (Color){255, 200, 255, 140};
+    DrawCylinder(top_arc, bhr + 140.0f, bhr + 20.0f, 25.0f, 48, lens_col);
+    DrawCylinder(bot_arc, bhr + 20.0f, bhr + 140.0f, 25.0f, 48, lens_col);
 
-        Vector3 rp = (Vector3){bh.x, bh.y + wobble, bh.z};
-        DrawCylinder(rp, ring_r, ring_r, height, 48, plasma_col);
-    }
+    // ========== 2. FLOOR SYSTEM (Option 1: Tinted Obsidian Glass) ==========
+    // 100% CLEAN GLASS MONOLITH (NO GRID LINES / NO WIREFRAMES / PERFECT CLARITY)
+    float floor_size = 4500.0f;
+    float fx = player_pos.x;
+    float fz = player_pos.z;
 
-    // GRAVITATIONAL LENSING LIGHT ARCS (Bending light around the singularity)
-    for (int arc = 0; arc < 4; arc++) {
-        float arc_angle = (arc / 4.0f) * TAU + t * 0.4f;
-        float arc_r = bhr + 40.0f + arc * 60.0f;
-        Vector3 arc_pos = (Vector3){
-            bh.x + cosf(arc_angle) * 30.0f,
-            bh.y + sinf(arc_angle) * 80.0f,
-            bh.z + sinf(arc_angle) * 30.0f
-        };
-        Color arc_col = bh_photon_col2; arc_col.a = 140;
-        DrawCylinder(arc_pos, arc_r, arc_r * 0.9f, 15.0f, 32, arc_col);
-    }
+    Vector3 g1 = {fx - floor_size, -0.10f, fz - floor_size};
+    Vector3 g2 = {fx + floor_size, -0.10f, fz - floor_size};
+    Vector3 g3 = {fx + floor_size, -0.10f, fz + floor_size};
+    Vector3 g4 = {fx - floor_size, -0.10f, fz + floor_size};
 
-    // EXPANDING GRAVITATIONAL SHOCKWAVES UNDER THE FLOOR
-    for (int w_idx = 0; w_idx < 4; w_idx++) {
-        float wave_r = fmodf(t * 120.0f + w_idx * 160.0f, 850.0f) + bhr;
-        unsigned char wave_a = (unsigned char)(140.0f * (1.0f - wave_r / (850.0f + bhr)));
-        Color wave_col = bh_photon_col1; wave_col.a = wave_a;
-        Vector3 wave_pos = (Vector3){bh.x, -50.0f, bh.z};
-        DrawCylinder(wave_pos, wave_r, wave_r, 2.0f, 36, wave_col);
-    }
+    // Dark tinted glass floor: clear enough that Gargantua below is 100% sharp & visible!
+    Color glass_col = (Color){ 6, 10, 24, 130 };
+    DrawTriangle3D(g1, g2, g3, glass_col);
+    DrawTriangle3D(g1, g3, g4, glass_col);
 
-    // ========== 2. FLOOR SYSTEM (Energy Void Apertures / Cosmic Rift Panels) ==========
-    float tile_step = 140.0f;
-    float cx = floorf(player_pos.x / tile_step) * tile_step;
-    float cz = floorf(player_pos.z / tile_step) * tile_step;
-    int range = 14;
-
-    for (int ti = -range; ti <= range; ti++) {
-        for (int tj = -range; tj <= range; tj++) {
-            float tx = cx + ti * tile_step;
-            float tz = cz + tj * tile_step;
-            float dist_sq = (tx - player_pos.x) * (tx - player_pos.x) + (tz - player_pos.z) * (tz - player_pos.z);
-            if (dist_sq > 2000.0f * 2000.0f) continue;
-
-            // Deterministic pattern: alternate tiles contain Void Aperture Windows
-            bool has_aperture = (((ti * 7 + tj * 13) & 1) == 0);
-
-            float margin = 3.0f;
-            float x1 = tx + margin;
-            float x2 = tx + tile_step - margin;
-            float z1 = tz + margin;
-            float z2 = tz + tile_step - margin;
-
-            if (!has_aperture) {
-                // Solid dark matte void plate (opaque/solid background)
-                Color plate_col = (Color){ 6, 8, 20, 245 };
-                Vector3 q1 = {x1, -0.10f, z1};
-                Vector3 q2 = {x2, -0.10f, z1};
-                Vector3 q3 = {x2, -0.10f, z2};
-                Vector3 q4 = {x1, -0.10f, z2};
-                DrawTriangle3D(q1, q2, q3, plate_col);
-                DrawTriangle3D(q1, q3, q4, plate_col);
-            } else {
-                // APERTURE TILE: 100% transparent void window surrounded by a smooth glowing plasma rim
-                Vector3 center = {tx + tile_step * 0.5f, -0.10f, tz + tile_step * 0.5f};
-                float aperture_r = tile_step * 0.38f;
-
-                // Glowing neon rim around the window
-                Color rim_col = main_grid_col; rim_col.a = 180;
-                DrawCylinder(center, aperture_r + 2.0f, aperture_r + 2.0f, 3.0f, 32, rim_col);
-            }
-        }
-    }
-
-    // Dynamic Player Echo Void Aperture (Clear viewing window directly under the player)
-    Vector3 player_aperture = (Vector3){player_pos.x, -0.05f, player_pos.z};
-    Color halo_col = main_grid_col; halo_col.a = 120;
-    DrawCylinder(player_aperture, 75.0f, 75.0f, 2.0f, 36, halo_col);
-
-    // Smooth Outer Arena Boundary Atmosphere Wall
+    // Smooth Outer Arena Boundary Wall
     float stage_max_r = 2500.0f + stage * 1500.0f;
     Vector3 wall_p = {0.0f, 0.0f, 0.0f};
-    Color wall_c = main_grid_col; wall_c.a = 75;
-    DrawCylinder(wall_p, stage_max_r, stage_max_r, 80.0f, 48, wall_c);
+    Color wall_c = main_grid_col; wall_c.a = 80;
+    DrawCylinder(wall_p, stage_max_r, stage_max_r, 70.0f, 48, wall_c);
 
     // ========== 3. WORLD OBJECTS ==========
     for (int i = 0; i < w->count; i++) {
