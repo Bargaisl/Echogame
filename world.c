@@ -224,20 +224,53 @@ void world_draw_3d(World *w, Vec3 player_pos, int stage) {
         DrawCylinder(wave_pos, wave_r, wave_r, 2.0f, 36, wave_col);
     }
 
-    // ========== 2. FLOOR SYSTEM (Ultra-Clear Dark Crystal Glass) ==========
-    float floor_size = 4500.0f;
-    float fx = player_pos.x;
-    float fz = player_pos.z;
+    // ========== 2. FLOOR SYSTEM (Energy Void Apertures / Cosmic Rift Panels) ==========
+    float tile_step = 140.0f;
+    float cx = floorf(player_pos.x / tile_step) * tile_step;
+    float cz = floorf(player_pos.z / tile_step) * tile_step;
+    int range = 14;
 
-    Vector3 g1 = {fx - floor_size, -0.10f, fz - floor_size};
-    Vector3 g2 = {fx + floor_size, -0.10f, fz - floor_size};
-    Vector3 g3 = {fx + floor_size, -0.10f, fz + floor_size};
-    Vector3 g4 = {fx - floor_size, -0.10f, fz + floor_size};
+    for (int ti = -range; ti <= range; ti++) {
+        for (int tj = -range; tj <= range; tj++) {
+            float tx = cx + ti * tile_step;
+            float tz = cz + tj * tile_step;
+            float dist_sq = (tx - player_pos.x) * (tx - player_pos.x) + (tz - player_pos.z) * (tz - player_pos.z);
+            if (dist_sq > 2000.0f * 2000.0f) continue;
 
-    // High clarity dark glass floor: the Interstellar accretion disc below shines through brilliantly!
-    Color glass_col = (Color){ 4,  8, 22, 110 };
-    DrawTriangle3D(g1, g2, g3, glass_col);
-    DrawTriangle3D(g1, g3, g4, glass_col);
+            // Deterministic pattern: alternate tiles contain Void Aperture Windows
+            bool has_aperture = (((ti * 7 + tj * 13) & 1) == 0);
+
+            float margin = 3.0f;
+            float x1 = tx + margin;
+            float x2 = tx + tile_step - margin;
+            float z1 = tz + margin;
+            float z2 = tz + tile_step - margin;
+
+            if (!has_aperture) {
+                // Solid dark matte void plate (opaque/solid background)
+                Color plate_col = (Color){ 6, 8, 20, 245 };
+                Vector3 q1 = {x1, -0.10f, z1};
+                Vector3 q2 = {x2, -0.10f, z1};
+                Vector3 q3 = {x2, -0.10f, z2};
+                Vector3 q4 = {x1, -0.10f, z2};
+                DrawTriangle3D(q1, q2, q3, plate_col);
+                DrawTriangle3D(q1, q3, q4, plate_col);
+            } else {
+                // APERTURE TILE: 100% transparent void window surrounded by a smooth glowing plasma rim
+                Vector3 center = {tx + tile_step * 0.5f, -0.10f, tz + tile_step * 0.5f};
+                float aperture_r = tile_step * 0.38f;
+
+                // Glowing neon rim around the window
+                Color rim_col = main_grid_col; rim_col.a = 180;
+                DrawCylinder(center, aperture_r + 2.0f, aperture_r + 2.0f, 3.0f, 32, rim_col);
+            }
+        }
+    }
+
+    // Dynamic Player Echo Void Aperture (Clear viewing window directly under the player)
+    Vector3 player_aperture = (Vector3){player_pos.x, -0.05f, player_pos.z};
+    Color halo_col = main_grid_col; halo_col.a = 120;
+    DrawCylinder(player_aperture, 75.0f, 75.0f, 2.0f, 36, halo_col);
 
     // Smooth Outer Arena Boundary Atmosphere Wall
     float stage_max_r = 2500.0f + stage * 1500.0f;
