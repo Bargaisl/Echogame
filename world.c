@@ -167,33 +167,65 @@ void world_draw_3d(World *w, Vec3 player_pos, int stage) {
         bh_disc_cols[2] = (Color){255, 100, 200, 255}; bh_disc_cols[3] = (Color){255, 200, 230, 255};
     }
 
-    // ========== 1. BLACK HOLE SINGULARITY (follows player, always visible below) ==========
-    Vector3 bh = (Vector3){player_pos.x, -160.0f, player_pos.z};
-    float bhr = 80.0f;
+    // ========== 1. BLACK HOLE SINGULARITY & INTERSTELLAR ACCRETION DISC ==========
+    Vector3 bh = (Vector3){player_pos.x, -170.0f, player_pos.z};
+    float bhr = 85.0f;
 
-    // Event horizon core (pitch black solid sphere)
-    DrawSphere(bh, bhr, BLACK);
+    // Pitch-black singularity core
+    DrawSphere(bh, bhr, (Color){ 2, 2, 6, 255 });
 
-    // Photon ring (solid translucent glow)
-    DrawCylinder(bh, bhr + 6.0f, bhr + 6.0f, 4.0f, 36, bh_photon_col1);
-    DrawCylinder(bh, bhr + 12.0f, bhr + 12.0f, 4.0f, 36, bh_photon_col2);
+    // White-hot photon sphere halo
+    DrawCylinder(bh, bhr + 4.0f, bhr + 4.0f, 6.0f, 48, (Color){255, 255, 255, 240});
+    DrawCylinder(bh, bhr + 12.0f, bhr + 12.0f, 4.0f, 48, bh_photon_col1);
 
-    // Accretion disc (solid translucent plasma rings — NO wireframe lines!)
-    for (int r = 0; r < 14; r++) {
-        float ring_r = (bhr + 20.0f) + r * 75.0f;
-        float height = 5.0f + r * 1.5f;
-        float wobble = sinf(t * 1.8f + r * 0.6f) * 4.0f;
+    // DENSE VOLUMETRIC PLASMA ACCRETION DISC (Interstellar Style: Continuous smooth gradient)
+    int disc_layers = 28;
+    for (int r = 0; r < disc_layers; r++) {
+        float norm = (float)r / (float)disc_layers;
+        float ring_r = (bhr + 16.0f) + norm * 950.0f;
+        float height = 4.0f + norm * 24.0f;
+        float wobble = sinf(t * 1.5f + norm * 4.0f) * 6.0f;
 
-        Color rc = bh_disc_cols[r % 4];
-        rc.a = (unsigned char)(160 - r * 9); // Translucent plasma glow
+        // Smooth volumetric gradient blending from hot inner core to deep outer plasma tail
+        Color plasma_col;
+        if (norm < 0.20f) {
+            plasma_col = (Color){255, 230, 255, (unsigned char)(230 - norm * 400)};
+        } else if (norm < 0.60f) {
+            plasma_col = bh_disc_cols[(r % 2) + 1];
+            plasma_col.a = (unsigned char)(180 * (1.0f - (norm - 0.2f) / 0.4f));
+        } else {
+            plasma_col = bh_disc_cols[r % 4];
+            plasma_col.a = (unsigned char)(90 * (1.0f - (norm - 0.6f) / 0.4f));
+        }
 
         Vector3 rp = (Vector3){bh.x, bh.y + wobble, bh.z};
-        DrawCylinder(rp, ring_r, ring_r, height, 36, rc);
+        DrawCylinder(rp, ring_r, ring_r, height, 48, plasma_col);
     }
 
-    // ========== 2. FLOOR SYSTEM (Semi-Transparent Tinted Obsidian Glass) ==========
-    // SOLID TINTED GLASS PLANE — 100% CLEAN (NO GRID LINES / NO WIREFRAMES!)
-    float floor_size = 4000.0f;
+    // GRAVITATIONAL LENSING LIGHT ARCS (Bending light around the singularity)
+    for (int arc = 0; arc < 4; arc++) {
+        float arc_angle = (arc / 4.0f) * TAU + t * 0.4f;
+        float arc_r = bhr + 40.0f + arc * 60.0f;
+        Vector3 arc_pos = (Vector3){
+            bh.x + cosf(arc_angle) * 30.0f,
+            bh.y + sinf(arc_angle) * 80.0f,
+            bh.z + sinf(arc_angle) * 30.0f
+        };
+        Color arc_col = bh_photon_col2; arc_col.a = 140;
+        DrawCylinder(arc_pos, arc_r, arc_r * 0.9f, 15.0f, 32, arc_col);
+    }
+
+    // EXPANDING GRAVITATIONAL SHOCKWAVES UNDER THE FLOOR
+    for (int w_idx = 0; w_idx < 4; w_idx++) {
+        float wave_r = fmodf(t * 120.0f + w_idx * 160.0f, 850.0f) + bhr;
+        unsigned char wave_a = (unsigned char)(140.0f * (1.0f - wave_r / (850.0f + bhr)));
+        Color wave_col = bh_photon_col1; wave_col.a = wave_a;
+        Vector3 wave_pos = (Vector3){bh.x, -50.0f, bh.z};
+        DrawCylinder(wave_pos, wave_r, wave_r, 2.0f, 36, wave_col);
+    }
+
+    // ========== 2. FLOOR SYSTEM (Ultra-Clear Dark Crystal Glass) ==========
+    float floor_size = 4500.0f;
     float fx = player_pos.x;
     float fz = player_pos.z;
 
@@ -202,16 +234,16 @@ void world_draw_3d(World *w, Vec3 player_pos, int stage) {
     Vector3 g3 = {fx + floor_size, -0.10f, fz + floor_size};
     Vector3 g4 = {fx - floor_size, -0.10f, fz + floor_size};
 
-    // Dark tinted glass color: semi-transparent so the Black Hole below is clearly visible!
-    Color glass_col = (Color){ 8, 12, 28, 150 };
+    // High clarity dark glass floor: the Interstellar accretion disc below shines through brilliantly!
+    Color glass_col = (Color){ 4,  8, 22, 110 };
     DrawTriangle3D(g1, g2, g3, glass_col);
     DrawTriangle3D(g1, g3, g4, glass_col);
 
-    // Outer Edge Stage Boundary Wall (Smooth translucent cylinder)
+    // Smooth Outer Arena Boundary Atmosphere Wall
     float stage_max_r = 2500.0f + stage * 1500.0f;
     Vector3 wall_p = {0.0f, 0.0f, 0.0f};
-    Color wall_c = main_grid_col; wall_c.a = 90;
-    DrawCylinder(wall_p, stage_max_r, stage_max_r, 60.0f, 48, wall_c);
+    Color wall_c = main_grid_col; wall_c.a = 75;
+    DrawCylinder(wall_p, stage_max_r, stage_max_r, 80.0f, 48, wall_c);
 
     // ========== 3. WORLD OBJECTS ==========
     for (int i = 0; i < w->count; i++) {
