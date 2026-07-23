@@ -37,6 +37,7 @@ typedef struct {
 } AudioEngine;
 
 bool audio_init(AudioEngine *ae);
+void audio_reset(AudioEngine *ae);
 void audio_update(AudioEngine *ae, float dt);
 void audio_play_sfx(AudioEngine *ae, SoundEffectType sfx, float volume);
 void audio_play_sfx_3d(AudioEngine *ae, SoundEffectType sfx, Vec3 sound_pos, Vec3 listener_pos, Vec3 listener_forward, float volume);

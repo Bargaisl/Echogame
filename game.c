@@ -218,6 +218,8 @@ void game_reset(GameState *g) {
 
     g->language = saved_lang;
 
+    audio_reset(&g->audio);
+
     g->rng_state = 54321 + (uint32_t)(g->world_stage * 123);
     g->total_game_time = 0.0f;
     g->survival_timer = 0.0f;
@@ -663,22 +665,21 @@ void game_update(GameState *g, float dt) {
         g->player_frozen = true;
         g->pull_timer = 0.0f;
         audio_play_sfx(&g->audio, SFX_PORTAL_WIN, 1.0f);
+        particles_burst_3d(&g->particles, g->player.pos, (Color){0, 240, 255, 255}, 80, 100.0f, 400.0f, 2.0f, 5.0f, 1.0f);
     }
 
     if (g->transitioning) {
-        // Update transition progress (2 seconds total)
-        g->transition_progress += dt / 2.0f;
+        // Update transition progress (0.8s smooth hyperspace warp)
+        g->transition_progress += dt / 0.8f;
         g->pull_timer += dt;
 
-        // Force pull towards portal after 0.5s
-        if (g->pull_timer >= 0.5f) {
-            Vec3 dir = vec3_normalize(vec3_sub(g->world.portal_pos, g->player.pos));
-            dir.y = 0.0f;
-            float pull_speed = 200.0f;
-            g->player.pos = vec3_add(g->player.pos, vec3_scale(dir, pull_speed * dt));
-        }
+        // Pull player OUTWARD smoothly into the portal event horizon (NOT backward across the map!)
+        Vec3 warp_dir = vec3_normalize((Vec3){g->player.pos.x, 0.0f, g->player.pos.z});
+        if (vec3_length_sq(warp_dir) < 0.001f) warp_dir = (Vec3){0.0f, 0.0f, 1.0f};
+        g->player.pos = vec3_add(g->player.pos, vec3_scale(warp_dir, 320.0f * dt));
+        g->distortion_level = FAST_LERP(g->distortion_level, 1.0f, dt * 10.0f);
 
-        // Freeze regular movement during portal transition
+        // Freeze regular keyboard movement during portal transition
         move_vec = (Vec3){0.0f, 0.0f, 0.0f};
 
         if (g->transition_progress >= 1.0f) {

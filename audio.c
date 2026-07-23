@@ -68,8 +68,9 @@ static void audio_stream_callback(void *buffer, unsigned int frames) {
         float bass_sub = synth_sine(bass_freq, t) * 0.25f + synth_saw(bass_freq * 0.5f, t) * 0.1f;
 
         float step_time = 0.20f;
-        int step_idx = (int)(t / step_time) % NUM_ARPEGGIO_NOTES;
-        float note_t = fmodf(t, step_time);
+        int step_idx = (int)(fabsf(t) / step_time) % NUM_ARPEGGIO_NOTES;
+        if (step_idx < 0) step_idx = 0;
+        float note_t = fmodf(fabsf(t), step_time);
         float arp_env = expf(-note_t * 8.0f);
         float arp_freq = ARPEGGIO_NOTES[step_idx];
         float arp_lead = synth_sine(arp_freq, t) * arp_env * 0.15f;
@@ -88,21 +89,22 @@ static void audio_stream_callback(void *buffer, unsigned int frames) {
             float vr = g_audio_engine->sfx_voices[v].vol_r;
             float sfx_sample = 0.0f;
 
-            if (st >= dur) {
+            if (dur <= 0.001f || st >= dur || isnan(st) || isnan(dur)) {
                 g_audio_engine->sfx_voices[v].active = false;
                 continue;
             }
 
-            float env = 1.0f - (st / dur);
+            float safe_dur = FAST_MAX(0.001f, dur);
+            float env = 1.0f - (st / safe_dur);
 
             switch (g_audio_engine->sfx_voices[v].type) {
                 case SFX_PULSE_BOOM: {
-                    float freq = FAST_LERP(250.0f, 40.0f, st / dur);
+                    float freq = FAST_LERP(250.0f, 40.0f, st / safe_dur);
                     sfx_sample = (synth_sine(freq, t) * 0.7f + synth_square(freq * 0.5f, t) * 0.3f) * env;
                     break;
                 }
                 case SFX_DECOY_LAND: {
-                    float freq = FAST_LERP(400.0f, 60.0f, st / dur);
+                    float freq = FAST_LERP(400.0f, 60.0f, st / safe_dur);
                     sfx_sample = (synth_sine(freq, t) * 0.8f + synth_saw(freq * 0.6f, t) * 0.2f) * env;
                     break;
                 }
@@ -112,7 +114,7 @@ static void audio_stream_callback(void *buffer, unsigned int frames) {
                     break;
                 }
                 case SFX_CRYSTAL_COLLECT: {
-                    float freq = 659.25f + floorf((st / dur) * 3.0f) * 200.0f;
+                    float freq = 659.25f + floorf((st / safe_dur) * 3.0f) * 200.0f;
                     sfx_sample = (synth_sine(freq, t) + synth_saw(freq * 0.5f, t) * 0.3f) * env * 0.5f;
                     break;
                 }
@@ -143,8 +145,21 @@ static void audio_stream_callback(void *buffer, unsigned int frames) {
         sample_l = FAST_CLAMP(sample_l * g_audio_engine->global_volume, -1.0f, 1.0f);
         sample_r = FAST_CLAMP(sample_r * g_audio_engine->global_volume, -1.0f, 1.0f);
 
+        if (isnan(sample_l)) sample_l = 0.0f;
+        if (isnan(sample_r)) sample_r = 0.0f;
+
         pcm_buffer[i * 2]     = (int16_t)(sample_l * 32767.0f);
         pcm_buffer[i * 2 + 1] = (int16_t)(sample_r * 32767.0f);
+    }
+}
+
+void audio_reset(AudioEngine *ae) {
+    if (!ae) return;
+    ae->time_accumulator = 0.0f;
+    ae->noise_level = 0.0f;
+    memset(ae->sfx_voices, 0, sizeof(ae->sfx_voices));
+    if (ae->active && IsAudioStreamValid(ae->stream) && !IsAudioStreamPlaying(ae->stream)) {
+        PlayAudioStream(ae->stream);
     }
 }
 
@@ -191,7 +206,6 @@ void audio_play_sfx(AudioEngine *ae, SoundEffectType sfx, float volume) {
             ae->sfx_voices[i].time = 0.0f;
             ae->sfx_voices[i].vol_l = volume;
             ae->sfx_voices[i].vol_r = volume;
-            ae->sfx_voices[i].active = true;
 
             switch (sfx) {
                 case SFX_PULSE_BOOM:      ae->sfx_voices[i].duration = 0.8f; break;
@@ -203,6 +217,8 @@ void audio_play_sfx(AudioEngine *ae, SoundEffectType sfx, float volume) {
                 case SFX_PLAYER_HURT:     ae->sfx_voices[i].duration = 0.3f; break;
                 case SFX_PORTAL_WIN:      ae->sfx_voices[i].duration = 1.5f; break;
             }
+            // Set active = true LAST to prevent thread race condition
+            ae->sfx_voices[i].active = true;
             break;
         }
     }
@@ -232,7 +248,6 @@ void audio_play_sfx_3d(AudioEngine *ae, SoundEffectType sfx, Vec3 sound_pos, Vec
             ae->sfx_voices[i].time = 0.0f;
             ae->sfx_voices[i].vol_l = vol_l;
             ae->sfx_voices[i].vol_r = vol_r;
-            ae->sfx_voices[i].active = true;
 
             switch (sfx) {
                 case SFX_PULSE_BOOM:      ae->sfx_voices[i].duration = 0.8f; break;
@@ -244,6 +259,8 @@ void audio_play_sfx_3d(AudioEngine *ae, SoundEffectType sfx, Vec3 sound_pos, Vec
                 case SFX_PLAYER_HURT:     ae->sfx_voices[i].duration = 0.3f; break;
                 case SFX_PORTAL_WIN:      ae->sfx_voices[i].duration = 1.5f; break;
             }
+            // Set active = true LAST to prevent thread race condition
+            ae->sfx_voices[i].active = true;
             break;
         }
     }
@@ -259,6 +276,11 @@ void audio_update(AudioEngine *ae, float dt) {
     if (!ae || !ae->active) return;
     ae->noise_level -= dt * 0.4f;
     if (ae->noise_level < 0.0f) ae->noise_level = 0.0f;
+
+    // Auto-resume stream if audio driver stalled or buffer underflowed
+    if (IsAudioStreamValid(ae->stream) && !IsAudioStreamPlaying(ae->stream)) {
+        PlayAudioStream(ae->stream);
+    }
 }
 
 void audio_close(AudioEngine *ae) {
