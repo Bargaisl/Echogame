@@ -1432,26 +1432,33 @@ void game_draw(GameState *g, Shader bg_shader, Shader echo_shader, Shader post_s
                 draw_text_bitmap(scons, sx + 10, sy + 76, 1, (Color){255, 215, 0, 255});
             }
         } else if (g->guide_tab == 1) {
-            DrawRectangle(100, 190, 1080, 130, (Color){22, 18, 40, 240});
-            DrawRectangleLines(100, 190, 1080, 130, (Color){255, 0, 170, 255});
-            draw_text_bitmap("LVL 1: SMALL BLACK TENTACLE BEASTS", 120, 205, 2, (Color){255, 0, 170, 255});
-            draw_text_bitmap("Pitch-black void imps with 8 writhing 3D tentacles and ruby eyes.", 120, 240, 1, WHITE);
-            draw_text_bitmap("Fast swarm chasers. Attack in large numbers.", 120, 265, 1, (Color){0, 255, 200, 255});
-            draw_text_bitmap("Drops: Blue Mana Orbs (+15 XP).", 120, 290, 1, (Color){255, 215, 0, 255});
+            DrawRectangle(100, 185, 1080, 100, (Color){22, 18, 40, 240});
+            DrawRectangleLines(100, 185, 1080, 100, (Color){255, 0, 170, 255});
+            draw_text_bitmap("LVL 1: SMALL BLACK TENTACLE BEASTS", 120, 195, 2, (Color){255, 0, 170, 255});
+            draw_text_bitmap("Pitch-black void imps with 8 writhing 3D tentacles and ruby eyes.", 120, 225, 1, WHITE);
+            draw_text_bitmap("Fast swarm chasers. Attack in large numbers.", 120, 245, 1, (Color){0, 255, 200, 255});
+            draw_text_bitmap("Drops: Blue Mana Orbs (+15 XP).", 120, 265, 1, (Color){255, 215, 0, 255});
 
-            DrawRectangle(100, 340, 1080, 130, (Color){35, 18, 25, 240});
-            DrawRectangleLines(100, 340, 1080, 130, (Color){255, 50, 0, 255});
-            draw_text_bitmap("LVL 2: RED TENTACLE MUTANTS", 120, 355, 2, (Color){255, 50, 0, 255});
-            draw_text_bitmap("Crimson core entities with 10 heavy black thrashing tentacles.", 120, 390, 1, WHITE);
-            draw_text_bitmap("High HP chasers. Heavy damage on contact.", 120, 415, 1, (Color){0, 255, 200, 255});
-            draw_text_bitmap("Drops: Yellow Mana Orbs (+50 XP).", 120, 440, 1, (Color){255, 215, 0, 255});
+            DrawRectangle(100, 295, 1080, 100, (Color){35, 18, 25, 240});
+            DrawRectangleLines(100, 295, 1080, 100, (Color){255, 50, 0, 255});
+            draw_text_bitmap("LVL 2: RED TENTACLE MUTANTS", 120, 305, 2, (Color){255, 50, 0, 255});
+            draw_text_bitmap("Crimson core entities with 10 heavy black thrashing tentacles.", 120, 335, 1, WHITE);
+            draw_text_bitmap("High HP chasers. Heavy damage on contact.", 120, 355, 1, (Color){0, 255, 200, 255});
+            draw_text_bitmap("Drops: Yellow Mana Orbs (+50 XP).", 120, 375, 1, (Color){255, 215, 0, 255});
 
-            DrawRectangle(100, 490, 1080, 150, (Color){15, 15, 25, 240});
-            DrawRectangleLines(100, 490, 1080, 150, (Color){0, 240, 255, 255});
-            draw_text_bitmap("LVL 3: BLACK HOLE SINGULARITY BOSS", 120, 505, 2, (Color){0, 240, 255, 255});
-            draw_text_bitmap("Titanic singularity with orbiting accretion rings and light beams.", 120, 540, 1, WHITE);
-            draw_text_bitmap("Slow moving, huge HP pool. Gravitational force.", 120, 565, 1, (Color){0, 255, 200, 255});
-            draw_text_bitmap("Drops: Multiple Yellow Mana Orbs & High XP.", 120, 590, 1, (Color){255, 215, 0, 255});
+            DrawRectangle(100, 405, 1080, 100, (Color){15, 15, 25, 240});
+            DrawRectangleLines(100, 405, 1080, 100, (Color){0, 240, 255, 255});
+            draw_text_bitmap("LVL 3: BLACK HOLE SINGULARITY BOSS", 120, 415, 2, (Color){0, 240, 255, 255});
+            draw_text_bitmap("Titanic singularity with orbiting accretion rings and light beams.", 120, 445, 1, WHITE);
+            draw_text_bitmap("Slow moving, huge HP pool. Gravitational force.", 120, 465, 1, (Color){0, 255, 200, 255});
+            draw_text_bitmap("Drops: Multiple Yellow Mana Orbs & High XP.", 120, 485, 1, (Color){255, 215, 0, 255});
+
+            DrawRectangle(100, 515, 1080, 115, (Color){45, 15, 5, 240});
+            DrawRectangleLines(100, 515, 1080, 115, (Color){255, 140, 0, 255});
+            draw_text_bitmap((g->language == LANG_RU) ? "LVL 4: ПОЖИРАЮЩЕЕ СОЛНЦЕ (СЕКРЕТНЫЙ БОСС)" : "LVL 4: DEVOURING SUN (SECRET BOSS)", 120, 525, 2, (Color){255, 140, 0, 255});
+            draw_text_bitmap((g->language == LANG_RU) ? "Гигантская горящая звезда (в 4 раза больше босса) с корональными вспышками пламени." : "Giant 3D flaming star (4x boss size) with solar flares & coronal prominence arcs.", 120, 555, 1, WHITE);
+            draw_text_bitmap((g->language == LANG_RU) ? "Спавнится с 6 уровня (1 на lvl 6, 2 на lvl 7, 5 на lvl 10...). 100% НЕУЯЗВИМ!" : "Spawns from Stage 6 (1 at lvl 6, 2 at lvl 7, 5 at lvl 10...). 100% INVULNERABLE!", 120, 575, 1, (Color){255, 220, 0, 255});
+            draw_text_bitmap((g->language == LANG_RU) ? "Излучает радиационную ауру пламени (45 DPS). ЕГО НУЖНО ТОЛЬКО ОБХОДИТЬ!" : "Emits burning radiation aura (45 DPS). CANNOT BE KILLED - MUST BE BYPASSED!", 120, 595, 1, (Color){0, 255, 200, 255});
         } else {
             DrawRectangle(100, 190, 1080, 450, (Color){18, 22, 45, 240});
             DrawRectangleLines(100, 190, 1080, 450, (Color){255, 215, 0, 255});

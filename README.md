@@ -99,6 +99,7 @@ Every time your Mana XP bar fills, you level up and choose 1 of 3 random upgrade
 | **Tentacle Imp** | Black sphere with pink tentacles | Swarms from all directions |
 | **Red Beast** | Red sphere with cyan eyes & tentacles | Faster, tougher |
 | **Black Hole Wraith** | Black core with magenta rings & energy beams | Elite — high HP, dangerous aura |
+| **Devouring Sun (Secret Boss)** | Giant 3D flaming star (4x boss size) with solar flares | Spawns from Stage 6 (1 at lvl 6, 2 at lvl 7, 5 at lvl 10...). **100% INVULNERABLE**, immune to knockback, emits burning radiation aura (45 DPS). Must be bypassed! |
 
 > Enemy count scales over time. Enemies primarily spawn in front of you (forward spawning).
 
@@ -337,6 +338,7 @@ Every time your Mana XP bar fills, you level up and choose 1 of 3 random upgrade
 | **Щупальцевый бес** | Чёрная сфера с розовыми щупальцами | Роится со всех направлений |
 | **Красный мутант** | Красная сфера, голубые глаза | Быстрее, опаснее |
 | **Призрак чёрной дыры** | Чёрное ядро с кольцами и лучами | Элита — много HP, опасная аура |
+| **Пожирающее Солнце (Секретный босс)** | Гигантская 3D-горящая звезда (в 4 раза крупнее босса) с вспышками плазмы | Появляется с 6 уровня (1 на 6 ур., 2 на 7 ур., 5 на 10 ур...). **100% НЕУЯЗВИМ**, иммунен к отталкиванию, излучает сжигающую радиационную ауру (45 DPS). Его нужно только обходить! |
 
 > Количество врагов растёт со временем. Враги преимущественно появляются спереди от игрока.
 
