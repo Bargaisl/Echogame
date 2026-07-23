@@ -16,7 +16,7 @@ int main(void) {
     log_debug("Starting main...");
 
     log_debug("Calling SetConfigFlags...");
-    SetConfigFlags(FLAG_MSAA_4X_HINT | FLAG_VSYNC_HINT);
+    SetConfigFlags(FLAG_MSAA_4X_HINT | FLAG_VSYNC_HINT | FLAG_WINDOW_RESIZABLE);
 
     log_debug("Calling InitWindow...");
     InitWindow(1280, 720, "ECHO 3D - Synthwave Neon Edition");

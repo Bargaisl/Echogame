@@ -359,6 +359,12 @@ void game_update(GameState *g, float dt) {
     audio_update(&g->audio, dt);
 
     Vector2 mpos = GetMousePosition();
+    float sw = (float)GetScreenWidth();
+    float sh = (float)GetScreenHeight();
+    if (sw > 0.0f && sh > 0.0f) {
+        mpos.x = (mpos.x / sw) * 1280.0f;
+        mpos.y = (mpos.y / sh) * 720.0f;
+    }
 
     if (g->state != STATE_PLAYING) {
         if (IsCursorHidden()) EnableCursor();
@@ -1233,6 +1239,12 @@ void game_draw(GameState *g, Shader bg_shader, Shader echo_shader, Shader post_s
     float t = (float)GetTime();
     float res[2] = {1280.0f, 720.0f};
     Vector2 mpos = GetMousePosition();
+    float sw = (float)GetScreenWidth();
+    float sh = (float)GetScreenHeight();
+    if (sw > 0.0f && sh > 0.0f) {
+        mpos.x = (mpos.x / sw) * 1280.0f;
+        mpos.y = (mpos.y / sh) * 720.0f;
+    }
 
     BeginDrawing();
     ClearBackground(BLACK);
@@ -1377,7 +1389,7 @@ void game_draw(GameState *g, Shader bg_shader, Shader echo_shader, Shader post_s
         SetShaderValue(post_shader, g->shader_locs.post_time_loc, &t, SHADER_UNIFORM_FLOAT);
         SetShaderValue(post_shader, g->shader_locs.post_res_loc, res, SHADER_UNIFORM_VEC2);
         SetShaderValue(post_shader, g->shader_locs.post_dist_loc, &zero_dist, SHADER_UNIFORM_FLOAT);
-        DrawTexturePro(target.texture, (Rectangle){0, 0, 1280, -720}, (Rectangle){0, 0, 1280, 720}, (Vector2){0, 0}, 0.0f, WHITE);
+        DrawTexturePro(target.texture, (Rectangle){0, 0, 1280, -720}, (Rectangle){0, 0, (float)GetScreenWidth(), (float)GetScreenHeight()}, (Vector2){0, 0}, 0.0f, WHITE);
         EndShaderMode();
         EndDrawing();
         return;
@@ -1485,7 +1497,7 @@ void game_draw(GameState *g, Shader bg_shader, Shader echo_shader, Shader post_s
         SetShaderValue(post_shader, g->shader_locs.post_time_loc, &t, SHADER_UNIFORM_FLOAT);
         SetShaderValue(post_shader, g->shader_locs.post_res_loc, res, SHADER_UNIFORM_VEC2);
         SetShaderValue(post_shader, g->shader_locs.post_dist_loc, &zero_dist, SHADER_UNIFORM_FLOAT);
-        DrawTexturePro(target.texture, (Rectangle){0, 0, 1280, -720}, (Rectangle){0, 0, 1280, 720}, (Vector2){0, 0}, 0.0f, WHITE);
+        DrawTexturePro(target.texture, (Rectangle){0, 0, 1280, -720}, (Rectangle){0, 0, (float)GetScreenWidth(), (float)GetScreenHeight()}, (Vector2){0, 0}, 0.0f, WHITE);
         EndShaderMode();
         EndDrawing();
         return;
@@ -1941,7 +1953,7 @@ void game_draw(GameState *g, Shader bg_shader, Shader echo_shader, Shader post_s
     SetShaderValue(post_shader, g->shader_locs.post_time_loc, &t, SHADER_UNIFORM_FLOAT);
     SetShaderValue(post_shader, g->shader_locs.post_res_loc, res, SHADER_UNIFORM_VEC2);
     SetShaderValue(post_shader, g->shader_locs.post_dist_loc, &g->distortion_level, SHADER_UNIFORM_FLOAT);
-    DrawTexturePro(target.texture, (Rectangle){0, 0, 1280, -720}, (Rectangle){0, 0, 1280, 720}, (Vector2){0, 0}, 0.0f, WHITE);
+    DrawTexturePro(target.texture, (Rectangle){0, 0, 1280, -720}, (Rectangle){0, 0, (float)GetScreenWidth(), (float)GetScreenHeight()}, (Vector2){0, 0}, 0.0f, WHITE);
     EndShaderMode();
 
     EndDrawing();
