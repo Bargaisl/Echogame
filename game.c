@@ -1457,84 +1457,137 @@ void game_draw(GameState *g, Shader bg_shader, Shader echo_shader, Shader post_s
     BeginMode3D(g->camera);
     world_draw_3d(&g->world, g->player.pos, g->world_stage);
 
-    // 3D Spells
+    // 3D Spells & Cosmic Abilities
+    // Projectiles (Fireball & Energy Bolt)
     for (int p = 0; p < MAX_PROJECTILES; p++) {
         if (g->projectiles[p].active) {
             Vector3 pp = (Vector3){g->projectiles[p].pos.x, g->projectiles[p].pos.y, g->projectiles[p].pos.z};
-            if (g->projectiles[p].is_fireball) { DrawSphere(pp, 8.0f, (Color){255, 50, 0, 255}); DrawSphereWires(pp, 12.0f, 8, 8, (Color){255, 215, 0, 255}); }
-            else { DrawSphere(pp, 3.5f, (Color){0, 240, 255, 255}); DrawSphereWires(pp, 5.0f, 6, 6, WHITE); }
+            if (g->projectiles[p].is_fireball) {
+                DrawSphere(pp, 8.0f, (Color){255, 60, 0, 255});
+                DrawSphere(pp, 4.0f, (Color){255, 220, 100, 255});
+                DrawSphereWires(pp, 13.0f + sinf(t*15.0f)*2.0f, 10, 10, (Color){255, 0, 170, 255});
+            } else {
+                DrawSphere(pp, 4.0f, (Color){0, 240, 255, 255});
+                DrawSphere(pp, 2.0f, WHITE);
+                DrawSphereWires(pp, 7.0f, 6, 6, (Color){0, 255, 200, 220});
+            }
         }
     }
+    // Meteors (Skill 3)
     for (int m = 0; m < MAX_METEORS; m++) {
         if (g->meteors[m].active) {
             Vector3 mp = (Vector3){g->meteors[m].pos.x, g->meteors[m].pos.y, g->meteors[m].pos.z};
-            DrawSphere(mp, 16.0f, (Color){255, 30, 0, 255}); DrawSphereWires(mp, 24.0f, 10, 10, (Color){255, 215, 0, 255});
+            DrawSphere(mp, 18.0f, (Color){255, 40, 0, 255});
+            DrawSphere(mp, 10.0f, (Color){255, 220, 0, 255});
+            DrawSphereWires(mp, 26.0f + sinf(t*12.0f)*3.0f, 12, 12, (Color){255, 0, 170, 255});
         }
     }
+    // Thunderbolts (Skill 2)
     for (int th = 0; th < MAX_THUNDERS; th++) {
         if (g->thunders[th].active) {
             Vector3 gp = (Vector3){g->thunders[th].pos.x, 2.0f, g->thunders[th].pos.z};
-            Vector3 sp = (Vector3){g->thunders[th].pos.x, 180.0f, g->thunders[th].pos.z};
-            DrawCylinderWires(gp, 25.0f, 25.0f, 2.0f, 16, (Color){0, 240, 255, 255});
-            DrawLine3D(sp, gp, (Color){0, 240, 255, 255});
-            DrawLine3D((Vector3){sp.x+5, sp.y, sp.z}, (Vector3){gp.x-5, gp.y, gp.z}, WHITE);
+            Vector3 sp = (Vector3){g->thunders[th].pos.x, 220.0f, g->thunders[th].pos.z};
+            DrawCylinder(gp, 12.0f, 12.0f, 220.0f, 16, (Color){0, 240, 255, 160});
+            DrawCylinderWires(gp, 28.0f, 28.0f, 4.0f, 24, (Color){255, 215, 0, 255});
+            DrawLine3D(sp, gp, WHITE);
+            DrawSphere(gp, 15.0f, (Color){0, 240, 255, 220});
         }
     }
+    // Plasma Ray / Death Beam (Skill 5)
     if (g->player.ray_active) {
         Vector3 rs = (Vector3){g->player.ray_start.x, g->player.ray_start.y, g->player.ray_start.z};
         Vector3 re = (Vector3){g->player.ray_end.x, g->player.ray_end.y, g->player.ray_end.z};
-        DrawLine3D(rs, re, (Color){0, 240, 255, 255}); DrawCylinderWires(rs, 6.0f, 6.0f, 600.0f, 12, (Color){255, 0, 170, 220});
+        DrawLine3D(rs, re, WHITE);
+        DrawCylinderWires(rs, 8.0f, 8.0f, 600.0f, 16, (Color){0, 240, 255, 240});
+        DrawCylinderWires(rs, 14.0f, 14.0f, 600.0f, 12, (Color){255, 0, 170, 200});
+        DrawSphere(re, 20.0f, (Color){0, 240, 255, 220});
     }
+    // Lava Zone / Void Pool (Skill 6)
     for (int l = 0; l < MAX_LAVA_ZONES; l++) {
         if (g->lavas[l].active) {
             Vector3 lp = (Vector3){g->lavas[l].pos.x, 1.0f, g->lavas[l].pos.z};
-            DrawCylinder(lp, g->lavas[l].radius, g->lavas[l].radius, 1.0f, 16, (Color){255, 50, 0, 180});
-            DrawCylinderWires(lp, g->lavas[l].radius, g->lavas[l].radius, 1.0f, 16, (Color){255, 215, 0, 255});
+            DrawCylinder(lp, g->lavas[l].radius, g->lavas[l].radius, 1.0f, 24, (Color){255, 30, 0, 200});
+            DrawCylinderWires(lp, g->lavas[l].radius, g->lavas[l].radius, 1.5f, 24, (Color){255, 215, 0, 255});
+            DrawCylinderWires(lp, g->lavas[l].radius * 0.6f, g->lavas[l].radius * 0.6f, 2.0f, 16, (Color){255, 0, 170, 220});
         }
     }
+    // Cosmic Tsunami (Skill 7)
     for (int ts = 0; ts < MAX_TSUNAMIS; ts++) {
         if (g->tsunamis[ts].active) {
-            Vector3 wp = (Vector3){g->tsunamis[ts].pos.x, 12.0f, g->tsunamis[ts].pos.z};
-            DrawCylinderWires(wp, g->tsunamis[ts].width * 0.5f, g->tsunamis[ts].width * 0.5f, 24.0f, 16, (Color){0, 240, 255, 240});
+            Vector3 wp = (Vector3){g->tsunamis[ts].pos.x, 15.0f, g->tsunamis[ts].pos.z};
+            float tw = g->tsunamis[ts].width * 0.5f;
+            DrawCylinder(wp, tw, tw, 30.0f, 24, (Color){0, 240, 255, 140});
+            DrawCylinderWires(wp, tw + 4.0f, tw + 4.0f, 32.0f, 24, (Color){255, 0, 170, 220});
         }
     }
-
+    // Satellites (Skill 4)
     if (g->player.skill_levels[4] > 0) {
         int ns = 2 + g->player.skill_levels[4];
         for (int k = 0; k < ns; k++) {
             float sa = (k / (float)ns) * TAU + t * 3.5f;
-            Vector3 sp = (Vector3){ g->player.pos.x + cosf(sa)*32.0f, 10.0f + sinf(t*5+k)*3, g->player.pos.z + sinf(sa)*32.0f };
-            DrawSphere(sp, 5.0f, (Color){255, 215, 0, 255}); DrawSphereWires(sp, 8.0f, 6, 6, (Color){0, 240, 255, 220});
+            Vector3 sp = (Vector3){ g->player.pos.x + cosf(sa)*36.0f, 10.0f + sinf(t*5.0f+k)*3.0f, g->player.pos.z + sinf(sa)*36.0f };
+            DrawSphere(sp, 5.0f, (Color){255, 215, 0, 255});
+            DrawSphere(sp, 2.5f, WHITE);
+            DrawSphereWires(sp, 9.0f + sinf(t*10.0f+k)*2.0f, 8, 8, (Color){0, 240, 255, 230});
         }
     }
+    // Magic Circle / Rune Matrix (Skill 11)
     if (g->player.skill_levels[11] > 0) {
         Vector3 mc = (Vector3){g->player.pos.x, 0.5f, g->player.pos.z};
-        DrawCylinderWires(mc, 55.0f, 55.0f, 0.5f, 24, (Color){255, 215, 0, 220});
-        DrawCylinderWires(mc, 35.0f, 35.0f, 0.5f, 16, (Color){0, 240, 255, 200});
-    }
-    if (g->player.skill_levels[8] > 0) {
-        Vector3 ez = (Vector3){g->player.pos.x, 0.4f, g->player.pos.z};
-        float ez_r = 40.0f + sinf(t*15.0f)*4.0f;
-        Color ez_col = (Color){0, 240, 255, 180};
-        DrawCylinder(ez, ez_r, ez_r, 0.4f, 28, ez_col);
-    }
-    if (g->player.skill_levels[9] > 0) {
-        Vector3 sh = (Vector3){g->player.pos.x + sinf(t*4.0f)*16.0f, 10.0f, g->player.pos.z + cosf(t*4.0f)*16.0f};
-        DrawSphere(sh, 6.0f, (Color){0, 255, 200, 230});
-    }
-    if (g->decoy.active) {
-        Vector3 dp = (Vector3){g->decoy.pos.x, g->decoy.pos.y, g->decoy.pos.z};
-        DrawSphere(dp, 4.0f, (Color){255, 215, 0, 255});
-        if (g->decoy.pulse_intensity > 0.05f) {
-            Vector3 dp_f = (Vector3){dp.x, 0.3f, dp.z};
-            Color d_col = (Color){255, 215, 0, (unsigned char)(200 * g->decoy.pulse_intensity)};
-            DrawCylinder(dp_f, g->decoy.pulse_radius, g->decoy.pulse_radius, 0.4f, 24, d_col);
+        DrawCylinder(mc, 55.0f, 55.0f, 0.6f, 32, (Color){255, 215, 0, 80});
+        DrawCylinderWires(mc, 55.0f, 55.0f, 0.8f, 32, (Color){255, 215, 0, 240});
+        DrawCylinderWires(mc, 35.0f, 35.0f, 0.8f, 24, (Color){0, 240, 255, 220});
+        // 4 Vertical Plasma Pillars at circle edges!
+        for (int p = 0; p < 4; p++) {
+            float pa = (p / 4.0f) * TAU + t * 1.5f;
+            Vector3 pp = (Vector3){g->player.pos.x + cosf(pa)*45.0f, 20.0f, g->player.pos.z + sinf(pa)*45.0f};
+            DrawCylinderWires(pp, 4.0f, 4.0f, 40.0f, 12, (Color){255, 0, 170, 220});
         }
     }
+    // Electric Zone (Skill 8) — Dynamic 3D Electric Plasma Storm Sphere around player & camera!
+    if (g->player.skill_levels[8] > 0) {
+        Vector3 ez = (Vector3){g->player.pos.x, 10.0f, g->player.pos.z};
+        float ez_r = 40.0f + g->player.skill_levels[8] * 8.0f + sinf(t * 12.0f) * 3.0f;
+        Color ez_col = (Color){0, 240, 255, 140};
+        DrawCylinder(ez, ez_r, ez_r, 0.5f, 32, ez_col);
+        DrawCylinderWires(ez, ez_r + 2.0f, ez_r + 2.0f, 1.0f, 32, (Color){255, 0, 170, 220});
+        // 3D Electric Energy Sphere around player!
+        DrawSphereWires(ez, ez_r * 0.85f, 12, 12, (Color){0, 240, 255, 160});
+    }
+    // Phase Shield / Silence Shield (Skill 9 & Shift Ghost Mode) — 3D Protective Energy Bubble around camera!
+    if (g->player.skill_levels[9] > 0 || g->player.in_silence_mode) {
+        Vector3 p_head = (Vector3){g->player.pos.x, 10.0f, g->player.pos.z};
+        float shield_r = 18.0f + sinf(t * 6.0f) * 1.5f;
+        // Translucent 3D energy bubble surrounding player/camera!
+        Color bubble_col = g->player.in_silence_mode ? (Color){0, 255, 200, 90} : (Color){0, 240, 255, 70};
+        DrawSphere(p_head, shield_r, bubble_col);
+        DrawSphereWires(p_head, shield_r + 1.0f, 10, 10, (Color){0, 255, 200, 220});
+        DrawCylinderWires(p_head, shield_r + 4.0f, shield_r + 4.0f, 2.0f, 16, (Color){255, 215, 0, 220});
+    }
+    // Decoy Grenade (Skill 10)
+    if (g->decoy.active) {
+        Vector3 dp = (Vector3){g->decoy.pos.x, g->decoy.pos.y, g->decoy.pos.z};
+        DrawSphere(dp, 5.0f, (Color){255, 215, 0, 255});
+        DrawSphereWires(dp, 9.0f + sinf(t*8.0f)*2.0f, 8, 8, (Color){0, 240, 255, 255});
+        if (g->decoy.pulse_intensity > 0.05f) {
+            Vector3 dp_f = (Vector3){dp.x, 0.3f, dp.z};
+            Color d_col = (Color){255, 215, 0, (unsigned char)(220 * g->decoy.pulse_intensity)};
+            DrawCylinder(dp_f, g->decoy.pulse_radius, g->decoy.pulse_radius, 0.5f, 28, d_col);
+            DrawSphereWires((Vector3){dp.x, 10.0f, dp.z}, g->decoy.pulse_radius * 0.7f, 10, 10, d_col);
+        }
+    }
+    // Echo Pulse 3D Wave (Space / Active Pulse) — Expanding 3D Neon Energy Sphere Dome!
     if (g->player.pulse_active && g->player.pulse_intensity > 0.05f) {
-        Vector3 o3 = (Vector3){g->player.pulse_origin.x, 0.3f, g->player.pulse_origin.z};
-        Color p_col = (Color){0, 240, 255, (unsigned char)(200 * g->player.pulse_intensity)};
-        DrawCylinder(o3, g->player.pulse_radius, g->player.pulse_radius, 0.4f, 28, p_col);
+        Vector3 o3 = (Vector3){g->player.pulse_origin.x, 10.0f, g->player.pulse_origin.z};
+        float pr = g->player.pulse_radius;
+        unsigned char alpha_val = (unsigned char)(200 * g->player.pulse_intensity);
+        Color p_col = (Color){0, 240, 255, alpha_val};
+        Color wire_col = (Color){255, 0, 170, alpha_val};
+
+        // Expanding 3D translucent neon energy dome around player/camera!
+        DrawSphere((Vector3){o3.x, 10.0f, o3.z}, pr, (Color){0, 240, 255, (unsigned char)(60 * g->player.pulse_intensity)});
+        DrawSphereWires(o3, pr, 14, 14, p_col);
+        DrawCylinderWires((Vector3){o3.x, 0.3f, o3.z}, pr, pr, 0.5f, 32, wire_col);
     }
 
     particles_draw_3d(&g->particles);
