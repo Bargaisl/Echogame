@@ -186,21 +186,37 @@ static void spawn_enemy_instance(GameState *g, int idx, float progress) {
     e->pulse_timer = rnd_range(&g->rng_state, 0.0f, 3.5f);
     e->active = true;
 
+    // Check for Stage 10+ Secret Boss: Devouring Sun / Solar Singularity
+    bool has_sun = false;
+    for (int k = 0; k < MAX_ENEMIES; k++) {
+        if (g->enemies[k].active && g->enemies[k].monster_level == 4) {
+            has_sun = true;
+            break;
+        }
+    }
+
     float lvl_roll = rnd_float(&g->rng_state);
-    if (lvl_roll < 0.60f) {
+    if (g->world_stage >= 10 && !has_sun && lvl_roll < 0.20f) {
+        e->monster_level = 4;
+        e->radius_scale = 120.0f; // 4x size of largest monster!
+        e->health = 999999.0f;    // INVULNERABLE!
+        e->max_health = 999999.0f;
+    } else if (lvl_roll < 0.60f) {
         e->monster_level = 1;
         e->radius_scale = 10.0f;
         e->health = 25.0f + progress * 30.0f;
+        e->max_health = e->health;
     } else if (lvl_roll < 0.90f) {
         e->monster_level = 2;
         e->radius_scale = 20.0f;
         e->health = 75.0f + progress * 90.0f;
+        e->max_health = e->health;
     } else {
         e->monster_level = 3;
         e->radius_scale = 42.0f;
         e->health = 300.0f + progress * 250.0f;
+        e->max_health = e->health;
     }
-    e->max_health = e->health;
 
     int roll = rnd_int(&g->rng_state, 0, 9);
     if (roll < 5) e->type_class = ENEMY_CLASS_STALKER;
@@ -984,11 +1000,16 @@ void game_update(GameState *g, float dt) {
             if (!enemy->active) continue;
             if (vec3_dist(proj->pos, enemy->pos) < (14.0f + enemy->radius_scale * 0.5f)) {
                 proj->active = false;
-                enemy->health -= proj->damage;
+                if (enemy->monster_level == 4) {
+                    enemy->health = 999999.0f; // Invulnerable Devouring Sun!
+                    particles_burst_3d(&g->particles, enemy->pos, (Color){255, 200, 0, 255}, 12, 60.0f, 180.0f, 2.5f, 5.0f, 0.4f);
+                } else {
+                    enemy->health -= proj->damage;
+                }
                 if (proj->is_fireball) {
                     particles_burst_3d(&g->particles, enemy->pos, (Color){255, 0, 50, 255}, 35, 80.0f, 220.0f, 2.5f, 5.0f, 0.6f);
                     for (int n = 0; n < MAX_ENEMIES; n++) {
-                        if (g->enemies[n].active && vec3_dist(g->enemies[n].pos, enemy->pos) < 55.0f)
+                        if (g->enemies[n].active && g->enemies[n].monster_level != 4 && vec3_dist(g->enemies[n].pos, enemy->pos) < 55.0f)
                             g->enemies[n].health -= proj->damage * 0.7f;
                     }
                 } else {
@@ -1087,7 +1108,8 @@ void game_update(GameState *g, float dt) {
             if (d_orig < g->player.pulse_radius && d_orig > (g->player.pulse_radius - 80.0f)) {
                 Vec3 push_dir = vec3_normalize(vec3_sub(enemy->pos, g->player.pulse_origin));
                 float knockback_force = 450.0f * dt * g->player.pulse_intensity;
-                if (enemy->monster_level == 3) knockback_force *= 0.25f;
+                if (enemy->monster_level == 4) knockback_force = 0.0f; // Invulnerable to knockback!
+                else if (enemy->monster_level == 3) knockback_force *= 0.25f;
                 enemy->pos = vec3_add(enemy->pos, vec3_scale(push_dir, knockback_force));
             }
         }
@@ -1113,7 +1135,16 @@ void game_update(GameState *g, float dt) {
         e->state = ENEMY_CHASE;
         e->target_pos = g->player.pos;
         float cur_speed = enemy_chase_speed;
-        if (e->monster_level == 3) cur_speed *= 0.35f;
+        if (e->monster_level == 4) {
+            cur_speed *= 0.18f; // Slow, unstoppable solar pursuit
+            // Devouring Solar Radiation Aura
+            if (dist_to_player < (e->radius_scale + 35.0f)) {
+                g->player.health -= dt * 45.0f;
+                g->distortion_level = 1.0f;
+                particles_burst_3d(&g->particles, g->player.pos, (Color){255, 120, 0, 255}, 4, 80.0f, 200.0f, 2.0f, 4.0f, 0.3f);
+            }
+            particles_spawn_3d(&g->particles, (Vec3){e->pos.x + sinf(g->survival_timer*8.0f)*50.0f, e->pos.y + 15.0f, e->pos.z + cosf(g->survival_timer*8.0f)*50.0f}, (Vec3){0, 30.0f, 0}, (Color){255, 140, 0, 255}, 6.0f, 0.4f);
+        } else if (e->monster_level == 3) cur_speed *= 0.35f;
         else if (e->type_class == ENEMY_CLASS_STALKER) cur_speed *= 1.25f;
         Vec3 dir = vec3_normalize(vec3_sub(e->target_pos, e->pos));
         e->pos = vec3_add(e->pos, vec3_scale(dir, cur_speed * dt));
@@ -1601,7 +1632,20 @@ void game_draw(GameState *g, Shader bg_shader, Shader echo_shader, Shader post_s
         Vector3 center = (Vector3){e->pos.x, e->pos.y + sinf(t*3.0f+i)*1.5f, e->pos.z};
         float r = e->radius_scale;
 
-        if (e->monster_level == 3) {
+        if (e->monster_level == 4) {
+            // DEVOURING SOLAR SINGULARITY (Level 10+ Invulnerable Sun Boss)
+            DrawSphere(center, r * 0.40f, WHITE);
+            DrawSphere(center, r * 0.70f, (Color){255, 180, 0, 255});
+            DrawSphere(center, r, (Color){255, 40, 0, 190});
+            // 12 Orbiting Solar Flare Arcs & Prominences
+            for (int k = 0; k < 12; k++) {
+                float fa = (k / 12.0f) * TAU + t * 2.0f;
+                float dist_f = r + 25.0f + sinf(t * 4.0f + k) * 18.0f;
+                Vector3 flare_pos = (Vector3){center.x + cosf(fa) * dist_f, center.y + sinf(t * 3.0f + k) * 25.0f, center.z + sinf(fa) * dist_f};
+                DrawSphere(flare_pos, 9.0f, (Color){255, 220, 0, 240});
+                DrawLine3D(center, flare_pos, (Color){255, 90, 0, 255});
+            }
+        } else if (e->monster_level == 3) {
             // Boss Monster: Solid dark core + glowing magenta/cyan aura
             DrawSphere(center, r, (Color){15, 5, 25, 255});
             DrawSphere(center, r * 0.7f, (Color){255, 0, 170, 240});
@@ -1724,6 +1768,18 @@ void game_draw(GameState *g, Shader bg_shader, Shader echo_shader, Shader post_s
         snprintf(sb, sizeof(sb), "STAGE %d  |  TIME %02d:%02d  |  KILLS %d", g->world_stage, mins, secs, g->total_kills);
         draw_text_bitmap(sb, center_x(sb, 405, 500, 1), center_y(12, 36, 1), 1, (Color){0, 240, 255, 255});
 
+        // Check for active Solar Boss & display Warning Banner
+        bool solar_active = false;
+        for (int e = 0; e < MAX_ENEMIES; e++) {
+            if (g->enemies[e].active && g->enemies[e].monster_level == 4) { solar_active = true; break; }
+        }
+        if (solar_active) {
+            const char *sw = (g->language == LANG_RU) ? "! ВНИМАНИЕ: ПОЖИРАЮЩЕЕ СОЛНЦЕ (НЕУЯЗВИМО) !" : "! WARNING: DEVOURING SUN (INVULNERABLE) !";
+            DrawRectangle(405, 52, 500, 24, (Color){180, 20, 0, 230});
+            DrawRectangleLines(405, 52, 500, 24, (Color){255, 200, 0, 255});
+            draw_text_bitmap(sw, center_x(sw, 405, 500, 1), 58, 1, (Color){255, 220, 0, 255});
+        }
+
         // Radar
         int cx = 1140, cy = 110; float mr = 75.0f, ms = mr / 450.0f;
         DrawCircle(cx, cy, mr, (Color){10, 12, 30, 245});
@@ -1752,8 +1808,9 @@ void game_draw(GameState *g, Shader bg_shader, Shader echo_shader, Shader post_s
             float dx = (g->enemies[e].pos.x - g->player.pos.x)*ms, dz = (g->enemies[e].pos.z - g->player.pos.z)*ms;
             if (dx*dx+dz*dz < mr*mr) {
                 int mx = cx+(int)dx, my = cy+(int)dz;
-                Color mc = (g->enemies[e].monster_level == 3) ? (Color){255, 0, 0, 255} : (Color){255, 0, 170, 220};
-                DrawCircle(mx, my, (g->enemies[e].monster_level == 3) ? 4.0f : 2.0f, mc);
+                Color mc = (g->enemies[e].monster_level == 4) ? (Color){255, 120, 0, 255} : (g->enemies[e].monster_level == 3) ? (Color){255, 0, 0, 255} : (Color){255, 0, 170, 220};
+                float mr_sz = (g->enemies[e].monster_level == 4) ? 7.0f : (g->enemies[e].monster_level == 3) ? 4.0f : 2.0f;
+                DrawCircle(mx, my, mr_sz, mc);
             }
         }
 
