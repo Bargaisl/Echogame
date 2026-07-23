@@ -1544,49 +1544,48 @@ void game_draw(GameState *g, Shader bg_shader, Shader echo_shader, Shader post_s
             DrawCylinderWires(pp, 4.0f, 4.0f, 40.0f, 12, (Color){255, 0, 170, 220});
         }
     }
-    // Electric Zone (Skill 8) — Dynamic 3D Electric Plasma Storm Sphere around player & camera!
+    // Electric Zone (Skill 8) — Smooth Electric Plasma Field
     if (g->player.skill_levels[8] > 0) {
         Vector3 ez = (Vector3){g->player.pos.x, 10.0f, g->player.pos.z};
         float ez_r = 40.0f + g->player.skill_levels[8] * 8.0f + sinf(t * 12.0f) * 3.0f;
-        Color ez_col = (Color){0, 240, 255, 140};
-        DrawCylinder(ez, ez_r, ez_r, 0.5f, 32, ez_col);
-        DrawCylinderWires(ez, ez_r + 2.0f, ez_r + 2.0f, 1.0f, 32, (Color){255, 0, 170, 220});
-        // 3D Electric Energy Sphere around player!
-        DrawSphereWires(ez, ez_r * 0.85f, 12, 12, (Color){0, 240, 255, 160});
+        Color ez_col = (Color){0, 240, 255, 120};
+        DrawCylinder((Vector3){ez.x, 0.4f, ez.z}, ez_r, ez_r, 0.5f, 32, ez_col);
+        DrawCylinderWires((Vector3){ez.x, 0.4f, ez.z}, ez_r + 2.0f, ez_r + 2.0f, 1.0f, 32, (Color){255, 0, 170, 220});
+        // Smooth inner plasma field — NO wireframe mesh dome!
+        DrawSphere(ez, ez_r * 0.70f, (Color){0, 240, 255, 30});
     }
-    // Phase Shield / Silence Shield (Skill 9 & Shift Ghost Mode) — 3D Protective Energy Bubble around camera!
+
+    // Phase Shield / Silence Shield (Skill 9 & Shift Ghost Mode) — Smooth Translucent Sci-Fi Forcefield Bubble
     if (g->player.skill_levels[9] > 0 || g->player.in_silence_mode) {
         Vector3 p_head = (Vector3){g->player.pos.x, 10.0f, g->player.pos.z};
         float shield_r = 18.0f + sinf(t * 6.0f) * 1.5f;
-        // Translucent 3D energy bubble surrounding player/camera!
-        Color bubble_col = g->player.in_silence_mode ? (Color){0, 255, 200, 90} : (Color){0, 240, 255, 70};
+        // Smooth 100% clean translucent plasma energy bubble surrounding player/camera — ZERO WIREFRAME GRID DOME!
+        Color bubble_col = g->player.in_silence_mode ? (Color){0, 255, 200, 85} : (Color){0, 240, 255, 65};
         DrawSphere(p_head, shield_r, bubble_col);
-        DrawSphereWires(p_head, shield_r + 1.0f, 10, 10, (Color){0, 255, 200, 220});
-        DrawCylinderWires(p_head, shield_r + 4.0f, shield_r + 4.0f, 2.0f, 16, (Color){255, 215, 0, 220});
+        // Smooth glowing energy rim on the floor
+        DrawCylinder((Vector3){p_head.x, 0.3f, p_head.z}, shield_r + 4.0f, shield_r + 4.0f, 0.6f, 24, (Color){255, 215, 0, 180});
     }
+
     // Decoy Grenade (Skill 10)
     if (g->decoy.active) {
         Vector3 dp = (Vector3){g->decoy.pos.x, g->decoy.pos.y, g->decoy.pos.z};
         DrawSphere(dp, 5.0f, (Color){255, 215, 0, 255});
-        DrawSphereWires(dp, 9.0f + sinf(t*8.0f)*2.0f, 8, 8, (Color){0, 240, 255, 255});
         if (g->decoy.pulse_intensity > 0.05f) {
             Vector3 dp_f = (Vector3){dp.x, 0.3f, dp.z};
             Color d_col = (Color){255, 215, 0, (unsigned char)(220 * g->decoy.pulse_intensity)};
             DrawCylinder(dp_f, g->decoy.pulse_radius, g->decoy.pulse_radius, 0.5f, 28, d_col);
-            DrawSphereWires((Vector3){dp.x, 10.0f, dp.z}, g->decoy.pulse_radius * 0.7f, 10, 10, d_col);
         }
     }
-    // Echo Pulse 3D Wave (Space / Active Pulse) — Expanding 3D Neon Energy Sphere Dome!
+
+    // Echo Pulse 3D Wave (Space / Active Pulse) — Smooth Expanding Translucent Plasma Wave
     if (g->player.pulse_active && g->player.pulse_intensity > 0.05f) {
         Vector3 o3 = (Vector3){g->player.pulse_origin.x, 10.0f, g->player.pulse_origin.z};
         float pr = g->player.pulse_radius;
-        unsigned char alpha_val = (unsigned char)(200 * g->player.pulse_intensity);
-        Color p_col = (Color){0, 240, 255, alpha_val};
+        unsigned char alpha_val = (unsigned char)(180 * g->player.pulse_intensity);
         Color wire_col = (Color){255, 0, 170, alpha_val};
 
-        // Expanding 3D translucent neon energy dome around player/camera!
-        DrawSphere((Vector3){o3.x, 10.0f, o3.z}, pr, (Color){0, 240, 255, (unsigned char)(60 * g->player.pulse_intensity)});
-        DrawSphereWires(o3, pr, 14, 14, p_col);
+        // Smooth expanding translucent neon energy dome — ZERO WIREFRAME MESH LINES!
+        DrawSphere((Vector3){o3.x, 10.0f, o3.z}, pr, (Color){0, 240, 255, (unsigned char)(50 * g->player.pulse_intensity)});
         DrawCylinderWires((Vector3){o3.x, 0.3f, o3.z}, pr, pr, 0.5f, 32, wire_col);
     }
 
