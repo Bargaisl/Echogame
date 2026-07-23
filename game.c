@@ -1716,12 +1716,13 @@ void game_draw(GameState *g, Shader bg_shader, Shader echo_shader, Shader post_s
         draw_text_bitmap(hp_str, 23, 100, 1, (Color){255, 100, 130, 200});
 
 
-        // Top-center timer & Stage indicator
-        DrawRectangle(420, 12, 440, 42, (Color){10, 12, 32, 235});
-        DrawRectangleLines(420, 12, 440, 42, (Color){255, 215, 0, 255});
-        int mins = (int)(g->survival_timer/60); int secs = (int)fmodf(g->survival_timer, 60);
-        char sb[64]; snprintf(sb, sizeof(sb), "STAGE %d | TIME %02d:%02d | KILLS %d", g->world_stage, mins, secs, g->total_kills);
-        draw_text_bitmap(sb, center_x(sb, 420, 440, 2), center_y(12, 42, 2), 2, (Color){0, 240, 255, 255});
+        // Top-center timer & Stage indicator (Width=500px, X=405 to X=905, H=36px)
+        DrawRectangle(405, 12, 500, 36, (Color){8, 10, 28, 245});
+        DrawRectangleLines(405, 12, 500, 36, (Color){0, 240, 255, 255});
+        int mins = (int)(g->survival_timer / 60.0f); int secs = (int)fmodf(g->survival_timer, 60.0f);
+        char sb[96];
+        snprintf(sb, sizeof(sb), "STAGE %d  |  TIME %02d:%02d  |  KILLS %d", g->world_stage, mins, secs, g->total_kills);
+        draw_text_bitmap(sb, center_x(sb, 405, 500, 1), center_y(12, 36, 1), 1, (Color){0, 240, 255, 255});
 
         // Radar
         int cx = 1140, cy = 110; float mr = 75.0f, ms = mr / 450.0f;
