@@ -138,33 +138,33 @@ void world_draw_3d(World *w, Vec3 player_pos, int stage) {
     if (!w) return;
     float t = (float)GetTime();
 
-    // Stage theme colors (1=Cyan/Purple, 2=Gold/Red, 3=Emerald/Green, 4=Crimson/Magenta, 5+=Electric Blue)
+    // Stage theme colors (1=Cyan/Purple, 2=Solar Amber/Red, 3=Emerald/Teal, 4=Crimson/Magenta)
     Color main_grid_col;
     Color sub_grid_col;
     Color bh_photon_col1, bh_photon_col2;
     Color bh_disc_cols[4];
 
     int theme = (stage - 1) % 4;
-    if (theme == 0) { // Stage 1, 5, 9... Cyber Cyan / Violet
-        main_grid_col = (Color){0, 220, 255, 200}; sub_grid_col = (Color){140, 40, 200, 100};
-        bh_photon_col1 = (Color){180, 80, 255, 255}; bh_photon_col2 = (Color){220, 60, 255, 250};
-        bh_disc_cols[0] = (Color){160, 0, 255, 255}; bh_disc_cols[1] = (Color){200, 60, 255, 255};
-        bh_disc_cols[2] = (Color){140, 120, 255, 255}; bh_disc_cols[3] = (Color){200, 180, 255, 255};
-    } else if (theme == 1) { // Stage 2, 6... Neon Amber / Fire Red
-        main_grid_col = (Color){255, 170, 0, 200}; sub_grid_col = (Color){220, 40, 0, 100};
-        bh_photon_col1 = (Color){255, 120, 0, 255}; bh_photon_col2 = (Color){255, 40, 0, 250};
-        bh_disc_cols[0] = (Color){255, 60, 0, 255}; bh_disc_cols[1] = (Color){255, 160, 0, 255};
-        bh_disc_cols[2] = (Color){255, 220, 0, 255}; bh_disc_cols[3] = (Color){255, 240, 150, 255};
-    } else if (theme == 2) { // Stage 3, 7... Bio Emerald / Toxic Teal
-        main_grid_col = (Color){0, 255, 150, 200}; sub_grid_col = (Color){0, 140, 200, 100};
-        bh_photon_col1 = (Color){0, 240, 180, 255}; bh_photon_col2 = (Color){0, 255, 100, 250};
-        bh_disc_cols[0] = (Color){0, 200, 100, 255}; bh_disc_cols[1] = (Color){0, 255, 200, 255};
-        bh_disc_cols[2] = (Color){100, 255, 180, 255}; bh_disc_cols[3] = (Color){200, 255, 240, 255};
-    } else { // Stage 4, 8... Blood Crimson / Deep Pink
-        main_grid_col = (Color){255, 0, 120, 200}; sub_grid_col = (Color){150, 0, 200, 100};
-        bh_photon_col1 = (Color){255, 0, 160, 255}; bh_photon_col2 = (Color){255, 0, 80, 250};
-        bh_disc_cols[0] = (Color){200, 0, 100, 255}; bh_disc_cols[1] = (Color){255, 0, 150, 255};
-        bh_disc_cols[2] = (Color){255, 100, 200, 255}; bh_disc_cols[3] = (Color){255, 200, 230, 255};
+    if (theme == 0) { // Stage 1, 5, 9... Cyber Cyan / Neon Violet
+        main_grid_col = (Color){0, 240, 255, 220}; sub_grid_col = (Color){160, 40, 240, 120};
+        bh_photon_col1 = (Color){0, 200, 255, 255}; bh_photon_col2 = (Color){180, 60, 255, 255};
+        bh_disc_cols[0] = (Color){160, 0, 255, 255}; bh_disc_cols[1] = (Color){0, 220, 255, 255};
+        bh_disc_cols[2] = (Color){120, 40, 240, 255}; bh_disc_cols[3] = (Color){0, 180, 255, 255};
+    } else if (theme == 1) { // Stage 2, 6... Solar Flame / Crimson Fire
+        main_grid_col = (Color){255, 120, 0, 220}; sub_grid_col = (Color){200, 20, 0, 120};
+        bh_photon_col1 = (Color){255, 90, 0, 255}; bh_photon_col2 = (Color){220, 20, 20, 255};
+        bh_disc_cols[0] = (Color){255, 60, 0, 255}; bh_disc_cols[1] = (Color){255, 100, 0, 255};
+        bh_disc_cols[2] = (Color){200, 20, 40, 255}; bh_disc_cols[3] = (Color){255, 140, 20, 255};
+    } else if (theme == 2) { // Stage 3, 7... Bio Emerald / Toxic Plasma
+        main_grid_col = (Color){0, 255, 140, 220}; sub_grid_col = (Color){0, 140, 180, 120};
+        bh_photon_col1 = (Color){0, 255, 160, 255}; bh_photon_col2 = (Color){0, 200, 180, 255};
+        bh_disc_cols[0] = (Color){0, 220, 120, 255}; bh_disc_cols[1] = (Color){0, 255, 200, 255};
+        bh_disc_cols[2] = (Color){20, 180, 160, 255}; bh_disc_cols[3] = (Color){0, 240, 140, 255};
+    } else { // Stage 4, 8... Cosmic Crimson / Deep Magenta
+        main_grid_col = (Color){255, 0, 160, 220}; sub_grid_col = (Color){140, 0, 200, 120};
+        bh_photon_col1 = (Color){255, 0, 180, 255}; bh_photon_col2 = (Color){200, 0, 120, 255};
+        bh_disc_cols[0] = (Color){220, 0, 140, 255}; bh_disc_cols[1] = (Color){255, 0, 180, 255};
+        bh_disc_cols[2] = (Color){160, 0, 220, 255}; bh_disc_cols[3] = (Color){240, 0, 120, 255};
     }
 
     // ========== 1. CRISP INTERSTELLAR GARGANTUA SINGULARITY (Underneath at Y = -180) ==========
@@ -176,7 +176,7 @@ void world_draw_3d(World *w, Vec3 player_pos, int stage) {
 
     // Razor-sharp white-hot Photon Ring
     DrawCylinderWires(bh, bhr + 4.0f, bhr + 4.0f, 3.0f, 36, WHITE);
-    DrawCylinderWires(bh, bhr + 10.0f, bhr + 10.0f, 2.0f, 36, (Color){255, 220, 100, 255});
+    DrawCylinderWires(bh, bhr + 10.0f, bhr + 10.0f, 2.0f, 36, bh_photon_col1);
 
     // High-Contrast Gargantua Accretion Disc (Clean concentric plasma rings)
     for (int r = 0; r < 10; r++) {
@@ -237,7 +237,7 @@ void world_draw_3d(World *w, Vec3 player_pos, int stage) {
     // Glowing boundary rings at floor level
     for (int h = 0; h < 4; h++) {
         Vector3 hp = {0.0f, h * 15.0f, 0.0f};
-        Color ring_c = (h % 2 == 0) ? (Color){255, 0, 170, 255} : (Color){0, 240, 255, 255};
+        Color ring_c = (h % 2 == 0) ? main_grid_col : sub_grid_col;
         DrawCylinderWires(hp, stage_max_r, stage_max_r, 8.0f, 64, ring_c);
     }
     // High-visibility vertical boundary beacon pillars
@@ -245,7 +245,7 @@ void world_draw_3d(World *w, Vec3 player_pos, int stage) {
         float ba = (b / 32.0f) * TAU + t * 0.2f;
         Vector3 bp1 = {cosf(ba) * stage_max_r, 0.0f, sinf(ba) * stage_max_r};
         Vector3 bp2 = {cosf(ba) * stage_max_r, 160.0f, sinf(ba) * stage_max_r};
-        DrawLine3D(bp1, bp2, (Color){255, 215, 0, 245});
+        DrawLine3D(bp1, bp2, main_grid_col);
     }
 
     // ========== 3. WORLD OBJECTS ==========
