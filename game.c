@@ -1555,24 +1555,27 @@ void game_draw(GameState *g, Shader bg_shader, Shader echo_shader, Shader post_s
         DrawSphere(ez, ez_r * 0.70f, (Color){0, 240, 255, 30});
     }
 
-    // Phase Shield / Silence Shield (Skill 9 & Shift Ghost Mode) — Smooth Translucent Sci-Fi Forcefield Bubble
-    if (g->player.skill_levels[9] > 0 || g->player.in_silence_mode) {
+    // Phase Shield / Ghost Mode (Left Shift & Skill 9)
+    if (g->player.in_silence_mode) {
         Vector3 p_head = (Vector3){g->player.pos.x, 10.0f, g->player.pos.z};
         float shield_r = 18.0f + sinf(t * 6.0f) * 1.5f;
-        // Smooth 100% clean translucent plasma energy bubble surrounding player/camera — ZERO WIREFRAME GRID DOME!
-        Color bubble_col = g->player.in_silence_mode ? (Color){0, 255, 200, 85} : (Color){0, 240, 255, 65};
-        DrawSphere(p_head, shield_r, bubble_col);
-        // Smooth glowing energy rim on the floor
-        DrawCylinder((Vector3){p_head.x, 0.3f, p_head.z}, shield_r + 4.0f, shield_r + 4.0f, 0.6f, 24, (Color){255, 215, 0, 180});
+        // 3D Wireframe Protective Energy Field Grid Sphere surrounding camera!
+        DrawSphereWires(p_head, shield_r, 12, 12, (Color){0, 255, 200, 240});
+        DrawSphere(p_head, shield_r, (Color){0, 255, 200, 45});
+    } else if (g->player.skill_levels[9] > 0) {
+        Vector3 p_head = (Vector3){g->player.pos.x, 10.0f, g->player.pos.z};
+        float shield_r = 18.0f + sinf(t * 6.0f) * 1.5f;
+        DrawSphere(p_head, shield_r, (Color){0, 240, 255, 60});
+        DrawCylinderWires((Vector3){p_head.x, 0.3f, p_head.z}, shield_r + 2.0f, shield_r + 2.0f, 0.5f, 24, (Color){0, 240, 255, 200});
     }
 
     // Decoy Grenade (Skill 10)
     if (g->decoy.active) {
         Vector3 dp = (Vector3){g->decoy.pos.x, g->decoy.pos.y, g->decoy.pos.z};
-        DrawSphere(dp, 5.0f, (Color){255, 215, 0, 255});
+        DrawSphere(dp, 5.0f, (Color){0, 240, 255, 255});
         if (g->decoy.pulse_intensity > 0.05f) {
             Vector3 dp_f = (Vector3){dp.x, 0.3f, dp.z};
-            Color d_col = (Color){255, 215, 0, (unsigned char)(220 * g->decoy.pulse_intensity)};
+            Color d_col = (Color){0, 240, 255, (unsigned char)(220 * g->decoy.pulse_intensity)};
             DrawCylinder(dp_f, g->decoy.pulse_radius, g->decoy.pulse_radius, 0.5f, 28, d_col);
         }
     }
