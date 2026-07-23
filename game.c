@@ -186,17 +186,17 @@ static void spawn_enemy_instance(GameState *g, int idx, float progress) {
     e->pulse_timer = rnd_range(&g->rng_state, 0.0f, 3.5f);
     e->active = true;
 
-    // Check for Stage 10+ Secret Boss: Devouring Sun / Solar Singularity
-    bool has_sun = false;
+    // Check for Stage 6+ Secret Boss: Devouring Sun / Solar Singularity
+    int current_suns = 0;
     for (int k = 0; k < MAX_ENEMIES; k++) {
         if (g->enemies[k].active && g->enemies[k].monster_level == 4) {
-            has_sun = true;
-            break;
+            current_suns++;
         }
     }
+    int max_suns = (g->world_stage >= 6) ? (g->world_stage - 5) : 0;
 
     float lvl_roll = rnd_float(&g->rng_state);
-    if (g->world_stage >= 10 && !has_sun && lvl_roll < 0.20f) {
+    if (max_suns > 0 && current_suns < max_suns && lvl_roll < 0.25f) {
         e->monster_level = 4;
         e->radius_scale = 120.0f; // 4x size of largest monster!
         e->health = 999999.0f;    // INVULNERABLE!
@@ -1769,12 +1769,16 @@ void game_draw(GameState *g, Shader bg_shader, Shader echo_shader, Shader post_s
         draw_text_bitmap(sb, center_x(sb, 405, 500, 1), center_y(12, 36, 1), 1, (Color){0, 240, 255, 255});
 
         // Check for active Solar Boss & display Warning Banner
-        bool solar_active = false;
+        int solar_count = 0;
         for (int e = 0; e < MAX_ENEMIES; e++) {
-            if (g->enemies[e].active && g->enemies[e].monster_level == 4) { solar_active = true; break; }
+            if (g->enemies[e].active && g->enemies[e].monster_level == 4) solar_count++;
         }
-        if (solar_active) {
-            const char *sw = (g->language == LANG_RU) ? "! ВНИМАНИЕ: ПОЖИРАЮЩЕЕ СОЛНЦЕ (НЕУЯЗВИМО) !" : "! WARNING: DEVOURING SUN (INVULNERABLE) !";
+        if (solar_count > 0) {
+            char sw[96];
+            if (g->language == LANG_RU)
+                snprintf(sw, sizeof(sw), "! ВНИМАНИЕ: ПОЖИРАЮЩИЕ СОЛНЦА (%d) - НЕУЯЗВИМЫ !", solar_count);
+            else
+                snprintf(sw, sizeof(sw), "! WARNING: DEVOURING SUNS ACTIVE (%d) - INVULNERABLE !", solar_count);
             DrawRectangle(405, 52, 500, 24, (Color){180, 20, 0, 230});
             DrawRectangleLines(405, 52, 500, 24, (Color){255, 200, 0, 255});
             draw_text_bitmap(sw, center_x(sw, 405, 500, 1), 58, 1, (Color){255, 220, 0, 255});
